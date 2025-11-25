@@ -64,39 +64,49 @@ def fetch_all_cities():
     soup = BeautifulSoup(html, "html.parser")
 
     city_links = soup.select('[data-sentry-component="CitiesList"] a')
-    cities = [link.get("href").split("/")[3] for link in city_links if link.get("href")]
+    cities = [
+        {"slug": link.get("href").split("/")[3], "name": link.get_text(strip=True)}
+        for link in city_links if link.get("href")
+    ]
 
     return cities
 
-def print_deals(deals):
+def print_deals(cities_data):
     """Print the formatted deals (text output)."""
-    for r in deals:
-        print(f"{r['restaurant']}")
-        for d in r['deals']:
-            print(f" - {d}")
-        print(f" → {r['link']}")
+    for city, city_deals in cities_data.items():
+        print(f"Deals in {city.capitalize()}:")
+        for r in city_deals:
+            print(f"  {r['restaurant']}")
+            for d in r['deals']:
+                print(f"   - {d}")
+            print(f"   → {r['link']}")
         print()
 
-def output_json(deals):
-    """Output deals in JSON format."""
+def output_json(cities_data):
+    """Output deals in JSON format, including city information."""
     with open("output.json", "w", encoding="utf-8") as f:
-        json.dump(deals, f, ensure_ascii=False, indent=4)
+        json.dump(cities_data, f, ensure_ascii=False, indent=4)
 
-def output_html(deals):
-    """Output deals in simple HTML format."""
+def output_html(cities_data):
+    """Output deals in simple HTML format, grouped by city."""
     html_content = """
     <html>
     <head><title>NeoTaste Deals</title></head>
     <body>
     <h1>NeoTaste Deals</h1>
     """
-    for r in deals:
-        html_content += f"<h2>{r['restaurant']}</h2>"
-        html_content += "<ul>"
-        for d in r['deals']:
-            html_content += f"<li>{d}</li>"
-        html_content += f"<a href='{r['link']}'>View Restaurant</a><br>"
-        html_content += "</ul>"
+
+    # Add each city with its restaurant list
+    for city, city_deals in cities_data.items():
+        city_link = f"https://neotaste.com/de/restaurants/{city}"
+        html_content += f"<h2><a href='{city_link}'>Deals in {city.capitalize()}</a></h2>"
+        for r in city_deals:
+            html_content += f"<h3>{r['restaurant']}</h3>"
+            html_content += "<ul>"
+            for d in r['deals']:
+                html_content += f"<li>{d}</li>"
+            html_content += f"<a href='{r['link']}'>View Restaurant</a><br>"
+            html_content += "</ul>"
 
     html_content += "</body></html>"
 
@@ -124,36 +134,38 @@ def main():
 
     args = parser.parse_args()
 
-    deals = []
+    cities_data = {}
 
     if args.city:
         # Fetch and print deals for a specific city
         print(f"Fetching deals for city: {args.city}...")
         deals = fetch_deals_from_city(args.city, args.events)
+        cities_data[args.city] = deals
     elif args.all:
         # Fetch and print deals for all cities
         print("Fetching deals for all cities...")
         cities = fetch_all_cities()
         for city in cities:
-            print(f"Fetching deals for city: {city}...")
-            deals += fetch_deals_from_city(city, args.events)
+            print(f"Fetching deals for city: {city['slug']}...")
+            city_deals = fetch_deals_from_city(city['slug'], args.events)
+            cities_data[city['slug']] = city_deals
 
-    if not deals:
+    if not cities_data:
         print("No deals found.")
         return
 
     # Print deals in text format (default)
-    print_deals(deals)
+    print_deals(cities_data)
 
     # Output in JSON format if requested
     if args.json:
         print("Outputting deals to output.json...")
-        output_json(deals)
+        output_json(cities_data)
 
     # Output in HTML format if requested
     if args.html:
         print("Outputting deals to output.html...")
-        output_html(deals)
+        output_html(cities_data)
 
 if __name__ == "__main__":
     main()
