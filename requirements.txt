@@ -1,3 +1,3 @@
-requests
-bs4
-typing
+beautifulsoup4~=4.14.2
+requests~=2.32.5
+typing~=3.7.4.3
