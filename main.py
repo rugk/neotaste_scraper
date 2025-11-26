@@ -56,8 +56,8 @@ def fetch_deals_from_city(city_slug: str, filter_events: bool, lang="de"):
         if not link.startswith("http"):
             link = BASE_URL + link
 
-        # Restaurant name
-        name_el = card.select_one("h3, h4, .font-semibold")
+        # Get restaurant name from <h4 ...">
+        name_el = card.select_one("h4")
         if not name_el:
             continue
         name = name_el.get_text(strip=True)
@@ -159,7 +159,7 @@ def main():
     # Set up CLI argument parsing
     parser = argparse.ArgumentParser(description="NeoTaste CLI Tool")
     parser.add_argument(
-        "-c", "--city", type=str, help="City to scrape (e.g., 'nuremberg')"
+        "-c", "--city", type=str, help="City to scrape (e.g., 'berlin')"
     )
     parser.add_argument(
         "-a", "--all", action="store_true", help="Scrape all available cities"
