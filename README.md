@@ -159,3 +159,6 @@ Deals in Nuremberg:
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
+## Disclosure
+
+Especially for early-prototyping this has heavily [used ChatGPT](https://chatgpt.com/share/69277054-6f88-8009-90e4-c95d2346d031) for adding code.
