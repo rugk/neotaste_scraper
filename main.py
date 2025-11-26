@@ -3,12 +3,49 @@ import requests
 import json
 from bs4 import BeautifulSoup
 
-def fetch_deals_from_city(city_slug: str, filter_events: bool):
-    """Scrape deals from a specific city and optionally filter event deals."""
-    url = f"https://neotaste.com/de/restaurants/{city_slug}"
-    html = requests.get(url).text
-    soup = BeautifulSoup(html, "html.parser")
+# Constants
+BASE_URL = "https://neotaste.com"
 
+# Localized Strings
+localized_strings = {
+    'de': {
+        'deals_title': "NeoTaste Deals",
+        'restaurant_link_text': "Mehr Informationen/Details zum Angebot",
+        'view_restaurant': "Restaurant ansehen",
+        'deals_in': "Deals in",
+        'no_deals_found': "Keine Deals gefunden.",
+        'city_page': "Seite der Stadt",
+        'restaurant_details': "Mehr Details zum Restaurant",
+    },
+    'en': {
+        'deals_title': "NeoTaste Deals",
+        'restaurant_link_text': "More Info/Details about the Offer",
+        'view_restaurant': "View Restaurant",
+        'deals_in': "Deals in",
+        'no_deals_found': "No deals found.",
+        'city_page': "City Page",
+        'restaurant_details': "Restaurant Details",
+    }
+}
+
+def get_localized_strings(lang):
+    """Return the localized strings for the given language."""
+    return localized_strings.get(lang, localized_strings['de'])  # Default to German if not found
+
+def get_city_url(city_slug, lang="de"):
+    """Construct full URL for the given city with the specified language."""
+    return f"{BASE_URL}/{lang}/restaurants/{city_slug}"
+
+def fetch_deals_from_city(city_slug: str, filter_events: bool, lang="de"):
+    """Scrape deals from a specific city and optionally filter event deals."""
+    url = get_city_url(city_slug, lang)
+    try:
+        html = requests.get(url).text
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching {url}: {e}")
+        return []
+
+    soup = BeautifulSoup(html, "html.parser")
     results = []
 
     # Each restaurant card is an <a> with a restaurant link
@@ -17,7 +54,7 @@ def fetch_deals_from_city(city_slug: str, filter_events: bool):
     for card in cards:
         link = card.get("href")
         if not link.startswith("http"):
-            link = "https://neotaste.com" + link
+            link = BASE_URL + link
 
         # Restaurant name
         name_el = card.select_one("h3, h4, .font-semibold")
@@ -57,12 +94,16 @@ def fetch_deals_from_city(city_slug: str, filter_events: bool):
 
     return results
 
-def fetch_all_cities():
+def fetch_all_cities(lang="de"):
     """Scrape the main cities page to get a list of all cities."""
-    url = "https://neotaste.com/de/restaurants"
-    html = requests.get(url).text
-    soup = BeautifulSoup(html, "html.parser")
+    url = f"{BASE_URL}/{lang}/restaurants"
+    try:
+        html = requests.get(url).text
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching {url}: {e}")
+        return []
 
+    soup = BeautifulSoup(html, "html.parser")
     city_links = soup.select('[data-sentry-component="CitiesList"] a')
     cities = [
         {"slug": link.get("href").split("/")[3], "name": link.get_text(strip=True)}
@@ -71,41 +112,42 @@ def fetch_all_cities():
 
     return cities
 
-def print_deals(cities_data):
+def print_deals(cities_data, lang="de"):
     """Print the formatted deals (text output)."""
+    strings = get_localized_strings(lang)
     for city, city_deals in cities_data.items():
-        print(f"Deals in {city.capitalize()}:")
+        print(f"\n{strings['deals_in']} {city.capitalize()}:")
         for r in city_deals:
             print(f"  {r['restaurant']}")
             for d in r['deals']:
                 print(f"   - {d}")
             print(f"   → {r['link']}")
-        print()
 
 def output_json(cities_data):
     """Output deals in JSON format, including city information."""
     with open("output.json", "w", encoding="utf-8") as f:
         json.dump(cities_data, f, ensure_ascii=False, indent=4)
 
-def output_html(cities_data):
+def output_html(cities_data, lang="de"):
     """Output deals in simple HTML format, grouped by city."""
-    html_content = """
+    strings = get_localized_strings(lang)
+    html_content = f"""
     <html>
-    <head><title>NeoTaste Deals</title></head>
+    <head><title>{strings['deals_title']}</title></head>
     <body>
-    <h1>NeoTaste Deals</h1>
+    <h1>{strings['deals_title']}</h1>
     """
 
     # Add each city with its restaurant list
     for city, city_deals in cities_data.items():
-        city_link = f"https://neotaste.com/de/restaurants/{city}"
-        html_content += f"<h2><a href='{city_link}'>Deals in {city.capitalize()}</a></h2>"
+        city_link = get_city_url(city, lang)
+        html_content += f"<h2><a id='{city.lower()}' href='{city_link}'>{strings['deals_in']} {city.capitalize()}</a></h2>"
         for r in city_deals:
             html_content += f"<h3>{r['restaurant']}</h3>"
             html_content += "<ul>"
             for d in r['deals']:
                 html_content += f"<li>{d}</li>"
-            html_content += f"<a href='{r['link']}'>View Restaurant</a><br>"
+            html_content += f"<a href='{r['link']}'>{strings['view_restaurant']}</a><br>"
             html_content += "</ul>"
 
     html_content += "</body></html>"
@@ -131,6 +173,9 @@ def main():
     parser.add_argument(
         "-H", "--html", action="store_true", help="Output in HTML format"
     )
+    parser.add_argument(
+        "-l", "--lang", type=str, choices=["de", "en"], default="de", help="Language (default: de)"
+    )
 
     args = parser.parse_args()
 
@@ -139,23 +184,23 @@ def main():
     if args.city:
         # Fetch and print deals for a specific city
         print(f"Fetching deals for city: {args.city}...")
-        deals = fetch_deals_from_city(args.city, args.events)
+        deals = fetch_deals_from_city(args.city, args.events, args.lang)
         cities_data[args.city] = deals
     elif args.all:
         # Fetch and print deals for all cities
         print("Fetching deals for all cities...")
-        cities = fetch_all_cities()
+        cities = fetch_all_cities(args.lang)
         for city in cities:
             print(f"Fetching deals for city: {city['slug']}...")
-            city_deals = fetch_deals_from_city(city['slug'], args.events)
+            city_deals = fetch_deals_from_city(city['slug'], args.events, args.lang)
             cities_data[city['slug']] = city_deals
 
     if not cities_data:
-        print("No deals found.")
+        print(get_localized_strings(args.lang)['no_deals_found'])
         return
 
     # Print deals in text format (default)
-    print_deals(cities_data)
+    print_deals(cities_data, args.lang)
 
     # Output in JSON format if requested
     if args.json:
@@ -165,7 +210,7 @@ def main():
     # Output in HTML format if requested
     if args.html:
         print("Outputting deals to output.html...")
-        output_html(cities_data)
+        output_html(cities_data, args.lang)
 
 if __name__ == "__main__":
     main()
