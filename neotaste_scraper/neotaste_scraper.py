@@ -212,6 +212,3 @@ def main():
     if args.html:
         print("Outputting deals to output.html...")
         output_html(cities_data, args.lang)
-
-if __name__ == "__main__":
-    main()

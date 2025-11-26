@@ -3,7 +3,7 @@ Tests for CLI main Python file.
 """
 
 from unittest.mock import patch, MagicMock
-from neotaste_scraper import (
+from neotaste_scraper.neotaste_scraper import (
     extract_deals_from_card,
     fetch_deals_from_city,
     fetch_all_cities,
