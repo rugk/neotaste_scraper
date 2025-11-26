@@ -2,6 +2,11 @@
 
 This tool allows you to scrape restaurant deal information from NeoTaste's city-specific restaurant pages. You can filter and retrieve restaurant deals, including ”event-deals“ (marked with 🌟), and export the data to different formats: text, JSON, or HTML.
 
+## Website
+
+An up-to-date HTML output for all cities can be found [here at this GitHub page](https://rugk.github.io/neotaste_scraper/). Variations:
+* [a filtered view with all event deals](https://rugk.github.io/neotaste_scraper/event-only.html)
+
 ## Installation
 
 To use the NeoTaste Scraper CLI tool, you'll need to have Python 3.7+ installed. Follow these steps to set up the environment:
