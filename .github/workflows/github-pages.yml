@@ -3,6 +3,8 @@ name: Daily Export and GitHub Pages Update
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
@@ -40,6 +42,7 @@ jobs:
   
   deploy:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     needs: build-and-upload
     permissions:
       pages: write
@@ -52,3 +55,5 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          preview: ${{ github.ref != 'refs/heads/main' }}
