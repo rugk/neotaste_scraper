@@ -44,6 +44,36 @@ def get_city_url(city_slug, lang="de"):
     """Construct full URL for the given city with the specified language."""
     return f"{BASE_URL}/{lang}/restaurants/{city_slug}"
 
+def extract_deals_from_card(card, filter_events):
+    """Extract deals from a single restaurant card."""
+    link = card.get("href")
+    if not link.startswith("http"):
+        link = BASE_URL + link
+
+    # Restaurant name
+    name_el = card.select_one("h4")
+    if not name_el:
+        return None  # Return None if no name is found
+    name = name_el.get_text(strip=True)
+
+    # Deal container
+    deals_container = card.select_one('[data-sentry-component="RestaurantCardDeals"]')
+    if not deals_container:
+        return None  # Return None if no deals container is found
+
+    # Extract deal text
+    deal_spans = deals_container.select('[data-sentry-component="RestaurantDealPreview"] span')
+    deals = [sp.get_text(strip=True) for sp in deal_spans if sp.get_text(strip=True)]
+
+    if filter_events:
+        # Filter only event deals (those with 🌟)
+        deals = [deal for deal in deals if "🌟" in deal]
+
+    if not deals:
+        return None  # Return None if no deals match the filter
+
+    return {"restaurant": name, "deals": deals, "link": link}
+
 def fetch_deals_from_city(city_slug: str, filter_events: bool, lang="de"):
     """Scrape deals from a specific city and optionally filter event deals."""
     url = get_city_url(city_slug, lang)
@@ -60,47 +90,12 @@ def fetch_deals_from_city(city_slug: str, filter_events: bool, lang="de"):
     cards = soup.select("a[href*='/restaurants/']")
 
     for card in cards:
-        link = card.get("href")
-        if not link.startswith("http"):
-            link = BASE_URL + link
-
-        # Get restaurant name from <h4 ...">
-        name_el = card.select_one("h4")
-        if not name_el:
-            continue
-        name = name_el.get_text(strip=True)
-
-        # Deal container
-        deals_container = card.select_one('[data-sentry-component="RestaurantCardDeals"]')
-        if not deals_container:
-            continue
-
-        # Deal preview spans
-        deal_spans = deals_container.select('[data-sentry-component="RestaurantDealPreview"] span')
-
-        deals = [
-            sp.get_text(strip=True)
-            for sp in deal_spans
-            if sp.get_text(strip=True)
-        ]
-
-        if not deals:
-            continue
-
-        # Filter only event deals (those with 🌟)
-        if filter_events:
-            deals = [deal for deal in deals if "🌟" in deal]
-
-        if not deals:
-            continue
-
-        results.append({
-            "restaurant": name,
-            "deals": deals,
-            "link": link
-        })
+        result = extract_deals_from_card(card, filter_events)
+        if result:
+            results.append(result)
 
     return results
+
 
 def fetch_all_cities(lang="de"):
     """Scrape the main cities page to get a list of all cities."""
