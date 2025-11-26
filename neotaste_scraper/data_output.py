@@ -1,3 +1,7 @@
+"""
+Modle for outputting the scraping/parsing result.
+"""
+
 import json
 
 from jinja2 import Environment, FileSystemLoader
