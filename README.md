@@ -9,7 +9,7 @@ To use the NeoTaste Scraper CLI tool, you'll need to have Python 3.7+ installed.
 ### 1. Clone the repository (or download the files):
 
 ```bash
-git clone https://github.com/rugk/neotaste-fetcher.git
+git clone https://github.com/rugk/neotaste_scraper.git
 cd neotaste-fetcher
 ```
 
