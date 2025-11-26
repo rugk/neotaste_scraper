@@ -39,6 +39,7 @@ def test_extract_deals_from_card(html_file):
     # Assert the result is not None
     assert result is not None
     assert result['restaurant'] == "PETER PANE Burgergrill & Bar - Friedrichstr."
+    assert result['link'] == "https://neotaste.com/gb/restaurants/berlin/peter-pane-burgergrill-bar-friedrichstr"
     assert len(result['deals']) == 2  # Two deals: one with 🌟 and one without
     assert "🌟 €5 Wild Bert with Betel 🌟" in result['deals']
     assert "2for1 Aperitif" in result['deals']
