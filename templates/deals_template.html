@@ -6,8 +6,11 @@
     <title>{{ title }}</title>
 </head>
 <body>
-    <h1>{{ title }}</h1>
+    <header>
+        <h1>{{ title }}</h1>
+    </header>
 
+    <main>
     {% for city, city_deals in cities_data.items() %}
         <h2><a href="{{ base_url + '/' + (lang if lang else 'de') + '/restaurants/' + city }}" id="{{ city }}">{{ strings['deals_in'] }} {{ city.capitalize() }}</a></h2>
         
@@ -30,5 +33,10 @@
         {% endif %}
         <br />
     {% endfor %}
+    </main>
+        
+    <footer>
+        <a href="https://github.com/rugk/neotaste_scraper">Source code on GitHub</a>
+    </footer>
 </body>
 </html>
