@@ -1,4 +1,4 @@
-beautifulsoup4~=4.14.2
+beautifulsoup4~=4.14.3
 requests~=2.32.5
 typing~=3.7.4.3
 argparse~=1.4.0
