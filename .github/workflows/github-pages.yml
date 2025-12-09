@@ -31,9 +31,11 @@ jobs:
 
       - name: Run export script
         run: |
-          mkdir output
-          python main.py --all --html output/index.html --json output/index.json
-          python main.py --all --event --html output/event-only.html --json output/event-only.json
+          mkdir -p output/de output/en
+          python main.py --all --lang de --html output/de/index.html --json output/de/index.json
+          python main.py --all --lang de --event --html output/de/event-only.html --json output/de/event-only.json
+          python main.py --all --lang en --html output/en/index.html --json output/en/index.json
+          python main.py --all --lang en --event --html output/en/event-only.html --json output/en/event-only.json
 
       - name: Upload site files
         uses: actions/upload-pages-artifact@v4
