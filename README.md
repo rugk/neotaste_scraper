@@ -4,12 +4,18 @@ This tool allows you to scrape restaurant deal information from NeoTaste's city-
 
 ## Website
 
-An up-to-date HTML output for all cities can be found [here at this GitHub page](https://rugk.github.io/neotaste_scraper/). Variations:
-* [a filtered view with all event deals](https://rugk.github.io/neotaste_scraper/event-only.html)
+An up-to-date HTML output for all cities can be found [here at this GitHub page](https://rugk.github.io/neotaste_scraper/en). Variations:
+* [a filtered view with all event deals](https://rugk.github.io/neotaste_scraper/en/event-only.html)
 
 The JSON result is also available:
-* [full JSON result](https://rugk.github.io/neotaste_scraper/index.json)
-* [only event deals](https://rugk.github.io/neotaste_scraper/event-only.json)
+* [full JSON result](https://rugk.github.io/neotaste_scraper/en/index.json)
+* [only event deals](https://rugk.github.io/neotaste_scraper/en/event-only.json)
+
+Same s avaulable in German:
+* [all events](https://rugk.github.io/neotaste_scraper/de)
+* [a filtered view with all event deals](https://rugk.github.io/neotaste_scraper/de/event-only.html)
+* [full JSON result](https://rugk.github.io/neotaste_scraper/de/index.json)
+* [only event deals](https://rugk.github.io/neotaste_scraper/de/event-only.json)
 
 ## Installation
 
