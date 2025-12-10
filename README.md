@@ -177,3 +177,17 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 ## Disclosure
 
 Especially for early-prototyping this has heavily [used ChatGPT](https://chatgpt.com/share/69277054-6f88-8009-90e4-c95d2346d031) for adding code.
+
+## CI verification
+
+The GitHub Actions workflow runs a verification step after the export. It checks the generated
+JSON exports (`output/de/index.json`, `output/en/index.json`) and fails the workflow if all
+city lists are empty — this prevents deploying a broken/empty site. The workflow will also
+check `event-only` JSON files but treats them as non-failing (those are expected to be empty
+often).
+
+If you want to test the verification locally, run:
+
+```bash
+python3 scripts/verify_json.py path/to/index.json
+```

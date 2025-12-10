@@ -37,10 +37,25 @@ jobs:
           python main.py --all --lang en --html output/en/index.html --json output/en/index.json
           python main.py --all --lang en --event --html output/en/event-only.html --json output/en/event-only.json
 
+      # smoke test
+      - name: Verify JSON export contains results
+        run: |
+          set -e
+          python scripts/verify_json.py output/de/index.json || (echo "::error::Must have at least one entry in DE index.json"; exit 1)
+          python scripts/verify_json.py output/en/index.json || (echo "::error::Must have at least one entry in EN index.json"; exit 1)
+
+      - name: Verify JSON event export contains results
+        continue-on-error: true
+        run: |
+          set -e
+          python scripts/verify_json.py output/de/event-only.json
+          python scripts/verify_json.py output/en/event-only.json
+
       - name: Upload site files
         uses: actions/upload-pages-artifact@v4
         with:
           path: 'output'
+        if: always()
   
   deploy:
     runs-on: ubuntu-latest
