@@ -20,7 +20,7 @@ def main() -> int:
 
     filePath = Path(sys.argv[1])
     if not filePath.exists():
-        print(f"::error::JSON file not found: {p}")
+        print(f"::error::JSON file not found: {filePath}")
         return 404
 
     try:
