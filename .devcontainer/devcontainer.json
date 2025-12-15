@@ -3,7 +3,7 @@
 {
 	"name": "Python 3",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/python:2-3.14-trixie",
+	"image": "ghcr.io/devcontainers/templates/python:5.0.0",
 	"features": {
 		"ghcr.io/paul-gilber/devcontainer-features/jinja2-cli-homebrew:1": {
 			"version": "latest"
