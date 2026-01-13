@@ -11,7 +11,7 @@ The JSON result is also available:
 * [full JSON result](https://rugk.github.io/neotaste_scraper/en/index.json)
 * [only special deals](https://rugk.github.io/neotaste_scraper/en/special-only.json)
 
-Same is avaulable in German (direct links):
+Same is available in German (direct links):
 * [all events](https://rugk.github.io/neotaste_scraper/de)
 * [a filtered view with all special deals](https://rugk.github.io/neotaste_scraper/de/special-only.html)
 * [full JSON result](https://rugk.github.io/neotaste_scraper/de/index.json)
@@ -61,7 +61,7 @@ Once the tool is installed, you can run the script using the command line to fet
   Filter only event deals, which are marked with `🌟` in their name.
 
 * `-f`, `--flash`
-  Filter only flash deals, which are special flash promotions (bolt/flash badge).
+  Filter only flash deals, which are special flash promotions (⚡ flash badge).
 
 * `-s`, `--special`
   Filter only special deals (includes both `events` and `flash`).
