@@ -64,6 +64,8 @@ venv.bak/
 # IDEs
 .idea
 .vscode
+!.vscode/launch.json
+!.vscode/extensions.json
 
 # Custom for this app
 output.*
