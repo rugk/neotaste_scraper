@@ -20,7 +20,8 @@
 				"ms-python.python",
 				"GitHub.vscode-github-actions",
 				"ms-python.flake8",
-				"ms-python.pylint"
+				"ms-python.pylint",
+				"george-alisson.html-preview-vscode"
 			]
 		}
 	}
