@@ -32,10 +32,10 @@ jobs:
       - name: Run export script
         run: |
           mkdir -p output/de output/en
-          python main.py --all --lang de --html output/de/index.html --json output/de/index.json
-          python main.py --all --lang de --special --html output/de/special-only.html --json output/de/special-only.json
-          python main.py --all --lang en --html output/en/index.html --json output/en/index.json
-          python main.py --all --lang en --special --html output/en/special-only.html --json output/en/special-only.json
+          python main.py --all --lang de --html output/de/index.html --html-include-footer-navigation --json output/de/index.json
+          python main.py --all --lang de --special --html output/de/special-only.html --html-include-footer-navigation --json output/de/special-only.json
+          python main.py --all --lang en --html output/en/index.html --html-include-footer-navigation --json output/en/index.json
+          python main.py --all --lang en --special --html output/en/special-only.html --html-include-footer-navigation --json output/en/special-only.json
           # create a language-aware static redirect at the site root
           cp templates/root_redirect.html output/index.html
 

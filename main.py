@@ -47,6 +47,14 @@ def main() -> None:
         help="Output in HTML format (default: output.html)"
     )
     parser.add_argument(
+        "--html-include-footer-navigation", action="store_true",
+        help="Include footer navigation in HTML output. " +
+        "Only relevant if --html is used." +
+        "Note this is mostly only useful if deployed using the " +
+        "default GitHub Actions workflow, which expects the HTML " +
+        "file to be in certain places."
+    )
+    parser.add_argument(
         "-l", "--lang", type=str, choices=["de", "en"], default="de",
         help="Language (default: de)"
     )
@@ -101,8 +109,10 @@ def main() -> None:
     # Output in HTML format if requested
     if args.html:
         print(f"Outputting deals to {args.html}...")
-        output_html(cities_data, args.lang, args.html)
-
+        output_html(cities_data, args.lang, args.html, {
+            "filter_mode": filter_mode,
+            "include_footer_navigation": args.html_include_footer_navigation
+        })
 
 if __name__ == "__main__":
     main()
