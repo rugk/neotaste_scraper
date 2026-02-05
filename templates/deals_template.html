@@ -3,40 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <title>{{ title }}</title>
+    <style>
+        .icon-button {
+            padding: 10px;
+        }
+        
+        .github:before {
+            content: "🐙";
+        }
+
+        /* cross-out by https://stackoverflow.com/a/21958440/5008962 */
+        .cross-out {
+            position: relative;
+            overflow: hidden;
+        }
+        .cross-out:before,
+        .cross-out:after {
+            position: absolute;
+            content: '';
+            /* a little more transparent */
+            background: var(--variable);
+            opacity: 0.5;
+            display: block;
+            width: 100%;
+            height: 2px;
+            -webkit-transform: rotate(-45deg);
+            transform: rotate(-45deg); /* center the X vertically and horizontally: */
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            margin: auto;
+        }
+
+        .cross-out:after {
+            -webkit-transform: rotate(45deg);
+            transform: rotate(45deg);
+        }
+    </style>
 </head>
 <body>
     <header>
         <h1>{{ title }}</h1>
+        <nav>
+            <h2 id="toc">{{ strings['table_of_contents'] }}</h2>
+            <ul>
+                {% for city, city_deals in cities_data.items() %}
+                    <li><a href="#{{ city }}">{{ city.capitalize() }}</a><span style="color: var(--text-muted)"> ({{ city_deals|length }}&nbsp;{{ strings['deals'] }}</span>)</li>
+                {% endfor %}
+            </ul>
+        </nav>
+
+        <hr>
     </header>
 
     <main>
     {% for city, city_deals in cities_data.items() %}
         <h2><a href="{{ base_url + '/' + (lang if lang else 'de') + '/restaurants/' + city }}" id="{{ city }}">{{ strings['deals_in'] }} {{ city.capitalize() }}</a></h2>
         
-        {% if city_deals %}
-            <ul>
-            {% for restaurant in city_deals %}
-                <li>
-                    <h3>{{ restaurant['restaurant'] }}</h3>
-                    <ul>
-                        {% for deal in restaurant['deals'] %}
-                            <li>{{ deal }}</li>
-                        {% endfor %}
-                    </ul>
-                    <a href="{{ restaurant['link'] }}">{{ strings['restaurant_details'] }}</a>
-                </li>
-            {% endfor %}
-            </ul>
-        {% else %}
-            <p>{{ strings['no_deals_found'] }}</p>
-        {% endif %}
+        <details open>
+            <summary>{{ strings['show_deals_in'] }} {{ city.capitalize() }}</summary>
+            {% if city_deals %}
+                <ul>
+                {% for restaurant in city_deals %}
+                    <li>
+                        <h3>{{ restaurant['restaurant'] }}</h3>
+                        <ul>
+                            {% for deal in restaurant['deals'] %}
+                                <li>{{ deal }}</li>
+                            {% endfor %}
+                        </ul>
+                        <a href="{{ restaurant['link'] }}">{{ strings['restaurant_details'] }}</a>
+                    </li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p>{{ strings['no_deals_found'] }}</p>
+            {% endif %}
+        </details>
         <br />
     {% endfor %}
     </main>
         
-    <footer>
-        <a href="https://github.com/rugk/neotaste_scraper">Source code on GitHub</a>
+    <footer style="position: sticky; bottom: 0; background-color: var(--background-body); padding: 0.5em; display: flex; justify-content: space-between; align-items: center;">
+        <a class="github" href="https://github.com/rugk/neotaste_scraper">{{ strings['link_source_code'] }}</a>
+        
+        {% if include_footer_navigation %}
+            {% if lang == 'de' %}
+                <a class="language-switch" href="../en/{{ 'special-only.html' if filter_mode }}">{{ strings['in_english']}}</a> 
+            {% else %}
+                <a class="language-switch" href="../de/{{ 'special-only.html' if filter_mode }}">{{ strings['in_german']}}</a> 
+            {% endif %}
+            
+            {% if filter_mode %}
+                <a class="filter-toggle" href="./" title="{{ strings['no_filter']}}">
+                    <button class="icon-button cross-out">✨</button>
+                </a> 
+            {% else %}
+                <a class="filter-toggle" href="./special-only.html" title="{{ strings['use_filter']}}">
+                    <button class="icon-button">✨</button>
+                </a>
+            {% endif %}
+        {% endif %}
+        
+        <a style="align-self: flex-end" title="{{ strings['back_to_toc']}}" href="#toc">
+            <button class="icon-button">🔼</button>
+        </a>
     </footer>
+
+    <script>
+        // from https://stackoverflow.com/a/79883790/5008962
+        window.addEventListener('load', () => {
+            const headings = document.querySelectorAll('h1[id],h2[id],h3[id],a[id]');
+            
+            document.addEventListener('scroll', () => {
+                headings.forEach(elementWithAnchor => {
+                    const rect = elementWithAnchor.getBoundingClientRect();
+                    if (rect.top <= 0 || rect.top > 150) {
+                        return;
+                    }
+
+                    const newHash = `#${elementWithAnchor.id}`;
+                    if (window.location.hash == newHash) {
+                        return false;
+                    }
+
+                    history.replaceState(null, null, new URL(newHash, window.location));
+                });
+            });
+        });
+    </script>
+
+    {% if include_footer_navigation %}
+        <script>
+            /**
+             * Append the current hash to all language switch and filter toggle links, so that the user stays on the same section of the page when switching language or filter mode.
+             */
+            function updateHashLinks(params) {
+                linksThatShallIncludeHash.forEach(link => {
+                    const oldUrl = new URL(link.href);
+                    oldUrl.hash = ""; // remove existing hash to avoid duplication when appending
+
+                    link.href = new URL(oldUrl + window.location.hash, window.location.href).href;
+                });
+            }
+
+            const linksThatShallIncludeHash = document.querySelectorAll('.language-switch, .filter-toggle');
+            window.addEventListener('hashchange', () => {
+                updateHashLinks();
+            });
+            
+            updateHashLinks();
+        </script>
+    {% endif %}
 </body>
 </html>

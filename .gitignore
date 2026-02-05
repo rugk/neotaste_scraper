@@ -63,7 +63,6 @@ venv.bak/
 
 # IDEs
 .idea
-.vscode
 
 # Custom for this app
 output.*
