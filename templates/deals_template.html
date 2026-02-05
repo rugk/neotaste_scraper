@@ -113,6 +113,29 @@
         </a>
     </footer>
 
+    <script>
+        // from https://stackoverflow.com/a/79883790/5008962
+        window.addEventListener('load', () => {
+            const headings = document.querySelectorAll('h1[id],h2[id],h3[id],a[id]');
+            
+            document.addEventListener('scroll', () => {
+                headings.forEach(elementWithAnchor => {
+                    const rect = elementWithAnchor.getBoundingClientRect();
+                    if (rect.top <= 0 || rect.top > 150) {
+                        return;
+                    }
+
+                    const newHash = `#${elementWithAnchor.id}`;
+                    if (window.location.hash == newHash) {
+                        return false;
+                    }
+
+                    history.replaceState(null, null, new URL(newHash, window.location));
+                });
+            });
+        });
+    </script>
+
     {% if include_footer_navigation %}
         <script>
             /**
