@@ -131,6 +131,12 @@
                     }
 
                     history.replaceState(null, null, new URL(newHash, window.location));
+
+                    // need to manually trigger the hashchange event, because replaceState
+                    // doesn't trigger it by itself
+                    if (updateHashLinks !== undefined) {
+                        updateHashLinks();
+                    }
                 });
             });
         });
