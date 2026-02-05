@@ -15,23 +15,26 @@
     {% for city, city_deals in cities_data.items() %}
         <h2><a href="{{ base_url + '/' + (lang if lang else 'de') + '/restaurants/' + city }}" id="{{ city }}">{{ strings['deals_in'] }} {{ city.capitalize() }}</a></h2>
         
-        {% if city_deals %}
-            <ul>
-            {% for restaurant in city_deals %}
-                <li>
-                    <h3>{{ restaurant['restaurant'] }}</h3>
-                    <ul>
-                        {% for deal in restaurant['deals'] %}
-                            <li>{{ deal }}</li>
-                        {% endfor %}
-                    </ul>
-                    <a href="{{ restaurant['link'] }}">{{ strings['restaurant_details'] }}</a>
-                </li>
-            {% endfor %}
-            </ul>
-        {% else %}
-            <p>{{ strings['no_deals_found'] }}</p>
-        {% endif %}
+        <details open>
+            <summary>{{ strings['show_deals_in'] }} {{ city.capitalize() }}</summary>
+            {% if city_deals %}
+                <ul>
+                {% for restaurant in city_deals %}
+                    <li>
+                        <h3>{{ restaurant['restaurant'] }}</h3>
+                        <ul>
+                            {% for deal in restaurant['deals'] %}
+                                <li>{{ deal }}</li>
+                            {% endfor %}
+                        </ul>
+                        <a href="{{ restaurant['link'] }}">{{ strings['restaurant_details'] }}</a>
+                    </li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p>{{ strings['no_deals_found'] }}</p>
+            {% endif %}
+        </details>
         <br />
     {% endfor %}
     </main>
