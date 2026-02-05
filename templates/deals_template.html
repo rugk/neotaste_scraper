@@ -9,6 +9,16 @@
 <body>
     <header>
         <h1>{{ title }}</h1>
+        <nav>
+            <h2 id="toc">{{ strings['table_of_contents'] }}</h2>
+            <ul>
+                {% for city, city_deals in cities_data.items() %}
+                    <li><a href="#{{ city }}">{{ city.capitalize() }}</a></li>
+                {% endfor %}
+            </ul>
+        </nav>
+
+        <hr>
     </header>
 
     <main>

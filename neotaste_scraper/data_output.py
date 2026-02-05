@@ -12,6 +12,7 @@ from neotaste_scraper.neotaste_scraper import BASE_URL
 localized_strings = {
     'de': {
         'deals_title': "NeoTaste Deals",
+        'table_of_contents': "Inhaltsverzeichnis",
         'restaurant_link_text': "Mehr Informationen/Details zum Angebot",
         'view_restaurant': "Restaurant ansehen",
         'deals_in': "Deals in",
@@ -22,6 +23,7 @@ localized_strings = {
     },
     'en': {
         'deals_title': "NeoTaste Deals",
+        'table_of_contents': "Table of contents",
         'restaurant_link_text': "More Info/Details about the Offer",
         'view_restaurant': "View Restaurant",
         'deals_in': "Deals in",
