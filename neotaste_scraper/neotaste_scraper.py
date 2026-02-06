@@ -6,6 +6,7 @@ You can filter and retrieve restaurant deals, including
 different formats: text, JSON, or HTML.
 """
 
+from enum import Enum
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 import importlib
@@ -14,6 +15,14 @@ import json
 import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
+
+
+class Verbosity(Enum):
+    """Verbosity levels for debug output."""
+    SILENT = 0
+    NORMAL = 1  # -v: chunk summaries and limited previews
+    DEBUG = 2   # -vv: full JSON dumps for all chunks
+
 
 # Constants
 BASE_URL = "https://neotaste.com"
@@ -129,11 +138,24 @@ except ImportError:
 
 
 def _extract_anchors_from_text(text: str) -> List[Tag]:
-    """Given a string (possibly JSON containing HTML fragments), try to parse and return
-    a list of <a> Tag elements that point to restaurant pages."""
-    soup = BeautifulSoup(text, 'html.parser')
-    anchors = soup.select("a[href*='/restaurants/']")
-    return anchors
+    """Given a string (possibly JSON with HTML or plain HTML), try to parse and return
+    a list of <a> Tag elements that point to restaurant pages.
+    Tries JSON parsing first to avoid spurious BeautifulSoup warnings."""
+    # Try JSON parsing first to avoid BeautifulSoup MarkupResemblesLocatorWarning
+    try:
+        data = json.loads(text)
+        text = json.dumps(data, ensure_ascii=False)
+    except (json.JSONDecodeError, ValueError):
+        # Not JSON, proceed with raw text
+        pass
+    
+    # Now try HTML parsing
+    try:
+        soup = BeautifulSoup(text, 'html.parser')
+        anchors = soup.select("a[href*='/restaurants/']")
+        return anchors
+    except Exception:
+        return []
 
 
 def _try_njsparser_render(url: str) -> Optional[str]:
@@ -161,7 +183,7 @@ def _try_njsparser_render(url: str) -> Optional[str]:
     return None
 
 
-def _extract_anchors_from_flight_data(html: str) -> List[Tag]:
+def _extract_anchors_from_flight_data(html: str, verbosity: Verbosity = Verbosity.SILENT) -> List[Tag]:
     """Use njsparser to parse Next.js flight data from the page HTML and extract <a> anchors.
 
     This method uses the njsparser.BeautifulFD API to iterate over flight data chunks and
@@ -171,7 +193,8 @@ def _extract_anchors_from_flight_data(html: str) -> List[Tag]:
     if not NJS_AVAILABLE:
         # Let caller decide; always provide a helpful debug message
         import sys
-        print("[neotaste_scraper] njsparser not installed; pip install njsparser", file=sys.stderr)
+        if verbosity.value > Verbosity.SILENT.value:
+            print("[neotaste_scraper] njsparser not installed; pip install njsparser", file=sys.stderr)
         return []
 
     try:
@@ -186,35 +209,203 @@ def _extract_anchors_from_flight_data(html: str) -> List[Tag]:
         return []
 
     anchors: List[Tag] = []
+
+    def _walk_and_find_links(obj: Any, depth: int = 0) -> None:
+        """Recursively walk nested structures and attempt to extract HTML fragments
+        or link-like strings that point to restaurant pages.
+        """
+        try:
+            if obj is None:
+                return
+            # Strings may contain HTML fragments
+            if isinstance(obj, str):
+                if '/restaurants/' in obj:
+                    anchors_found = _extract_anchors_from_text(obj)
+                    anchors.extend(anchors_found)
+                return
+            # Lists/tuples: iterate
+            if isinstance(obj, (list, tuple)):
+                for it in obj:
+                    _walk_and_find_links(it, depth + 1)
+                return
+            # Dicts: check values and keys
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    # some flight-data stores HTML under 'children' or 'value'
+                    if isinstance(k, str) and ('children' in k or 'html' in k or 'link' in k or 'href' in k):
+                        _walk_and_find_links(v, depth + 1)
+                    else:
+                        _walk_and_find_links(v, depth + 1)
+                return
+            # Fallback: stringify and inspect
+            s = str(obj)
+            if '/restaurants/' in s:
+                anchors_found = _extract_anchors_from_text(s)
+                anchors.extend(anchors_found)
+        except Exception:
+            # Best-effort: don't fail the whole parsing flow for one bad node
+            return
+
+    # Iterate and provide verbose debug output so callers can step through njsparser internals
+    import sys
+    total_chunks = 0
     for data in fd.find_iter([njsparser.T.Data, njsparser.T.Element]):
+        total_chunks += 1
         # Data objects may carry a .content or .value attribute with nested structures
         content = getattr(data, 'content', None)
         if content is None:
             content = getattr(data, 'value', None)
 
-        # If the data is structured, try to dump to JSON string and parse any embedded HTML
+        # Print debug summary for this chunk (index, type, presence of content)
         try:
-            content_str = json.dumps(content, ensure_ascii=False)
-        except (TypeError, ValueError):
-            content_str = str(content)
+            idx = getattr(data, 'index', '?')
+            typ = type(data).__name__
+            has_content = 'yes' if content is not None else 'no'
+            if verbosity.value > Verbosity.SILENT.value:
+                print(f"[neotaste_scraper] njsparser chunk #{total_chunks} type={typ} idx={idx} has_content={has_content}", file=sys.stderr)
+        except Exception:
+            if verbosity.value > Verbosity.SILENT.value:
+                print(f"[neotaste_scraper] njsparser chunk #{total_chunks} (summary failed)", file=sys.stderr)
 
-        anchors.extend(_extract_anchors_from_text(content_str))
+        # Try to extract links from nested content
+        _walk_and_find_links(content)
 
+        # Print preview: full for chunks with restaurants, truncated for noise
+        try:
+            if verbosity.value > Verbosity.SILENT.value:
+                content_preview = json.dumps(content, ensure_ascii=False)
+                # Heuristic: check if this chunk likely contains useful data
+                is_useful = any(key in content_preview for key in ['state', 'queries', 'restaurants', 'slug', 'citySlug', 'deals'])
+                if is_useful and verbosity == Verbosity.DEBUG:
+                    # Full dump for useful chunks in debug mode
+                    print(f"[neotaste_scraper] chunk #{total_chunks} full preview:\n{content_preview}\n---", file=sys.stderr)
+                elif is_useful:
+                    # Truncated for useful chunks in normal mode
+                    if len(content_preview) > 300:
+                        content_preview = content_preview[:300] + '…'
+                    print(f"[neotaste_scraper] chunk #{total_chunks} preview: {content_preview}", file=sys.stderr)
+                else:
+                    # Always truncate unrelated chunks
+                    if len(content_preview) > 150:
+                        content_preview = content_preview[:150] + '…'
+                    print(f"[neotaste_scraper] chunk #{total_chunks} (unrelated): {content_preview}", file=sys.stderr)
+        except Exception:
+            pass
+
+    if verbosity.value > Verbosity.SILENT.value:
+        print(f"[neotaste_scraper] njsparser found {total_chunks} flight-data chunks, extracted {len(anchors)} anchors", file=sys.stderr)
     return anchors
+
+
+def _extract_structured_restaurants_from_flight_data(html: str, city_slug: str, lang: str = 'de', verbosity: Verbosity = Verbosity.SILENT) -> List[Dict[str, Any]]:
+    """Parse flight-data with njsparser and extract structured restaurant records + deals.
+
+    Returns a list of dicts: {"restaurant": name, "deals": [deal_names], "link": url}
+    Looks for chunks containing state.queries with restaurants (the restaurant list from the API).
+    Filters to only real restaurants in the specified city (by requiring citySlug and/or location fields).
+    """
+    if not NJS_AVAILABLE:
+        if verbosity.value > Verbosity.SILENT.value:
+            print("[neotaste_scraper] njsparser not installed; structured extractor skipped", file=sys.stderr)
+        return []
+
+    try:
+        fd = njsparser.BeautifulFD(html)
+    except Exception:
+        if verbosity.value > Verbosity.SILENT.value:
+            print("[neotaste_scraper] njsparser.BeautifulFD failed for structured extractor", file=sys.stderr)
+        return []
+
+    found: Dict[str, Dict[str, Any]] = {}  # key is slug to avoid duplicates
+
+    def _extract_deals_from_obj(obj: Any) -> List[str]:
+        """Extract deal names from a nested deal object or deals list."""
+        deals_out = []
+        if isinstance(obj, dict):
+            # Check if this is a deal object with 'name' field
+            if 'name' in obj and isinstance(obj.get('name'), str):
+                name = obj['name'].strip()
+                if name and obj.get('status') == 'available':
+                    deals_out.append(name)
+            # Recurse into nested structures
+            for v in obj.values():
+                deals_out.extend(_extract_deals_from_obj(v))
+        elif isinstance(obj, (list, tuple)):
+            for item in obj:
+                deals_out.extend(_extract_deals_from_obj(item))
+        return deals_out
+
+    def _is_real_restaurant(obj: Any) -> bool:
+        """Check if obj is likely a real restaurant (not a tag/category/country).
+        Real restaurants have citySlug matching and/or location fields (latitude/longitude).
+        """
+        if not isinstance(obj, dict):
+            return False
+        # Must match the target city
+        obj_city = obj.get('citySlug')
+        if obj_city != city_slug:
+            return False
+        # Should have some restaurant-specific fields
+        has_location = (obj.get('latitude') is not None or obj.get('longitude') is not None)
+        has_images = isinstance(obj.get('images'), (list, tuple)) and len(obj.get('images', [])) > 0
+        return has_location or has_images
+
+    def _recurse(obj: Any, depth: int = 0) -> None:
+        """Recursively search for restaurant objects and extract their data and deals."""
+        try:
+            if obj is None or depth > 50:
+                return
+            if isinstance(obj, dict):
+                # Check if this is a real restaurant object
+                slug = obj.get('slug')
+                name = obj.get('name')
+                if isinstance(slug, str) and isinstance(name, str) and slug and name:
+                    if '/' not in slug and len(slug) <= 100 and len(name) <= 200:
+                        if _is_real_restaurant(obj):
+                            if slug not in found:
+                                link = f"{BASE_URL}/{lang}/restaurants/{slug}"
+                                deals = _extract_deals_from_obj(obj.get('deals', []))
+                                found[slug] = {"restaurant": name, "deals": deals, "link": link}
+                                if verbose:
+                                    print(f"[neotaste_scraper] found restaurant: {name} with {len(deals)} deals (citySlug={obj.get('citySlug')})", file=sys.stderr)
+                # Recurse into dict values
+                for v in obj.values():
+                    _recurse(v, depth + 1)
+                return
+            if isinstance(obj, (list, tuple)):
+                for it in obj:
+                    _recurse(it, depth + 1)
+                return
+        except Exception:
+            return
+
+    total_chunks = 0
+    for data in fd.find_iter([njsparser.T.Data, njsparser.T.Element]):
+        total_chunks += 1
+        content = getattr(data, 'content', None)
+        if content is None:
+            content = getattr(data, 'value', None)
+        _recurse(content, depth=0)
+
+    if verbosity.value > Verbosity.SILENT.value:
+        print(f"[neotaste_scraper] structured extractor found {len(found)} restaurants with deals from {total_chunks} chunks", file=sys.stderr)
+
+    return list(found.values())
 
 
 def fetch_deals_from_city(city_slug: str,
                           filter_mode: Optional[str] = None,
-                          lang: str = "de") -> List[Dict[str, Any]]:
+                          lang: str = "de",
+                          verbosity: Verbosity = Verbosity.SILENT) -> List[Dict[str, Any]]:
     """Scrape deals from a specific city and optionally filter deals.
 
     Attempts a best-effort to retrieve the fully rendered restaurant list by:
     1) Parsing the initial page HTML (server-side rendered elements)
-    2) Using `njsparser` to extract Next.js flight data that may contain additional restaurant
-       HTML fragments (preferred)
-    3) Optionally using `njsparser` rendering helpers as a last-resort fallback
+    2) Using `njsparser` to extract structured restaurant objects with deals from flight-data
+    3) Using njsparser to extract HTML anchors from flight-data
+    4) Optionally using `njsparser` rendering helpers as a last-resort fallback
 
-    Note: This scraper now prefers `njsparser` (BeautifulFD) to extract Next.js flight data.
+    Deduplicates by link and applies filter_mode at the end.
     filter_mode may be None or one of 'events','flash','special'.
     """
 
@@ -225,68 +416,78 @@ def fetch_deals_from_city(city_slug: str,
         print(f"Error fetching {url}: {e}")
         return []
 
-    print(f"[neotaste_scraper] Fetching {url}", file=sys.stderr)
+    if verbosity.value > Verbosity.SILENT.value:
+        print(f"[neotaste_scraper] Fetching {url}", file=sys.stderr)
 
     soup = BeautifulSoup(html, "html.parser")
-    results: List[Dict[str, Any]] = []
+    results_by_slug: Dict[str, Dict[str, Any]] = {}
 
-    # First, parse what we have from the page HTML
+    # Helper: extract slug from a URL (last path component)
+    def get_slug_from_link(link: str) -> Optional[str]:
+        """Extract restaurant slug from URL."""
+        if not link:
+            return None
+        # Remove protocol and domain, get the last path component
+        path = link.split('/')[-1]
+        return path if path else None
+
+    # 1) Parse server-side HTML cards
     cards = soup.select("a[href*='/restaurants/']")
-
     for card in cards:
         result = extract_deals_from_card(card, filter_mode)
         if result:
-            results.append(result)
+            slug = get_slug_from_link(result['link'])
+            if slug:
+                results_by_slug[slug] = result
 
-    # Always attempt to use njsparser flight-data extractor
-    anchors_fd = _extract_anchors_from_flight_data(html)
+    # 2) Extract structured restaurant objects from flight-data (has deals)
+    structured = _extract_structured_restaurants_from_flight_data(html, city_slug=city_slug, lang=lang, verbosity=verbosity)
+    if structured:
+        if verbosity.value > Verbosity.SILENT.value:
+            print(f"[neotaste_scraper] structured flight-data extractor found {len(structured)} restaurants", file=sys.stderr)
+        for obj in structured:
+            slug = get_slug_from_link(obj['link'])
+            if slug and slug not in results_by_slug:
+                results_by_slug[slug] = obj
+
+    # 3) Try HTML anchor extraction from flight-data
+    anchors_fd = _extract_anchors_from_flight_data(html, verbosity=verbosity)
     if anchors_fd:
-        print(
-            f"[neotaste_scraper] Using njsparser flight-data extractor for {city_slug}",
-            file=sys.stderr,
-        )
-        seen_links = {r['link'] for r in results}
+        if verbosity.value > Verbosity.SILENT.value:
+            print(f"[neotaste_scraper] njsparser flight-data anchor extractor found {len(anchors_fd)} anchors", file=sys.stderr)
         for a in anchors_fd:
             link = a.get('href')
             if not link:
                 continue
             full_link = link if link.startswith('http') else BASE_URL + link
-            if full_link in seen_links:
-                continue
-            parsed = extract_deals_from_card(a, filter_mode)
-            if parsed:
-                results.append(parsed)
-                seen_links.add(full_link)
-    else:
-        print(
-            f"[neotaste_scraper] njsparser flight-data extractor returned no anchors for {city_slug}",
-            file=sys.stderr,
-        )
+            slug = get_slug_from_link(full_link)
+            if slug and slug not in results_by_slug:
+                parsed = extract_deals_from_card(a, filter_mode)
+                if parsed:
+                    results_by_slug[slug] = parsed
 
-    # If flight data didn't produce everything, try njsparser renderer helpers (last resort)
-    if len(results) < 20:
+    # 4) If flight data didn't produce everything, try njsparser renderer helpers (last resort)
+    if len(results_by_slug) < 20:
         njs_html = _try_njsparser_render(url)
         if njs_html:
-            print(
-                f"[neotaste_scraper] Using njsparser renderer fallback for {city_slug}",
-                file=sys.stderr,
-            )
+            if verbosity.value > Verbosity.SILENT.value:
+                print(f"[neotaste_scraper] Using njsparser renderer fallback for {city_slug}", file=sys.stderr)
             anchors = _extract_anchors_from_text(njs_html)
-            seen_links = {r['link'] for r in results}
             for a in anchors:
                 link = a.get('href')
                 if not link:
                     continue
                 full_link = link if link.startswith('http') else BASE_URL + link
-                if full_link in seen_links:
-                    continue
-                parsed = extract_deals_from_card(a, filter_mode)
-                if parsed:
-                    results.append(parsed)
-                    seen_links.add(full_link)
-        else:
-            print(f"[neotaste_scraper] njsparser renderer fallback produced no anchors for {city_slug}", file=sys.stderr)
+                slug = get_slug_from_link(full_link)
+                if slug and slug not in results_by_slug:
+                    parsed = extract_deals_from_card(a, filter_mode)
+                    if parsed:
+                        results_by_slug[slug] = parsed
 
+    # Return deduplicated results (dict.values maintains insertion order in Python 3.7+)
+    results = list(results_by_slug.values())
+    if verbosity.value > Verbosity.SILENT.value:
+        print(f"[neotaste_scraper] final result: {len(results)} unique restaurants after deduplication", file=sys.stderr)
     return results
 
 
