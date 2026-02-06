@@ -8,6 +8,9 @@ different formats: text, JSON, or HTML.
 
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
+import importlib
+import sys
+import json
 import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -82,9 +85,15 @@ def extract_deals_from_card(card: Tag,
 
     def _filter_deals(deals_in: List[Deal], mode: Optional[str]) -> List[Deal]:
         if mode == 'events':
-            return [d for d in deals_in if d.deal_type in ('event', 'flash+event')]
+            return [
+                d for d in deals_in
+                if d.deal_type in ('event', 'flash+event')
+            ]
         if mode == 'flash':
-            return [d for d in deals_in if d.deal_type in ('flash', 'flash+event')]
+            return [
+                d for d in deals_in
+                if d.deal_type in ('flash', 'flash+event')
+            ]
         if mode == 'special':
             return [d for d in deals_in if d.deal_type != 'other']
         return deals_in
@@ -110,12 +119,102 @@ def extract_deals_from_card(card: Tag,
         return None
     return {"restaurant": name, "deals": results, "link": link}
 
+# Prefer njsparser for parsing Next.js flight data. This scraper relies on it.
+try:
+    import njsparser  # type: ignore
+    NJS_AVAILABLE = True
+except ImportError:
+    njsparser = None  # type: ignore
+    NJS_AVAILABLE = False
+
+
+def _extract_anchors_from_text(text: str) -> List[Tag]:
+    """Given a string (possibly JSON containing HTML fragments), try to parse and return
+    a list of <a> Tag elements that point to restaurant pages."""
+    soup = BeautifulSoup(text, 'html.parser')
+    anchors = soup.select("a[href*='/restaurants/']")
+    return anchors
+
+
+def _try_njsparser_render(url: str) -> Optional[str]:
+    """Optional: use the `njsparser` package (if installed) to render the Next.js page
+    and return an HTML string. This is a best-effort fallback; failures are silently ignored.
+
+    The function will try common entry points on the imported module (parse/render/extract/get_html).
+    """
+    try:
+        njs = importlib.import_module('njsparser')
+    except ImportError:
+        return None
+
+    for fn in ('render', 'parse', 'extract', 'get_html', 'render_html'):
+        if hasattr(njs, fn):
+            try:
+                res = getattr(njs, fn)(url)
+                if isinstance(res, str) and res.strip():
+                    return res
+                if isinstance(res, dict) and 'html' in res and isinstance(res['html'], str):
+                    return res['html']
+            except (AttributeError, TypeError, ValueError):
+                # Skip this candidate on common errors
+                continue
+    return None
+
+
+def _extract_anchors_from_flight_data(html: str) -> List[Tag]:
+    """Use njsparser to parse Next.js flight data from the page HTML and extract <a> anchors.
+
+    This method uses the njsparser.BeautifulFD API to iterate over flight data chunks and
+    extract HTML fragments from structured data. If `njsparser` is not available, an
+    informative debug message will be printed and an empty list returned.
+    """
+    if not NJS_AVAILABLE:
+        # Let caller decide; always provide a helpful debug message
+        import sys
+        print("[neotaste_scraper] njsparser not installed; pip install njsparser", file=sys.stderr)
+        return []
+
+    try:
+        fd = njsparser.BeautifulFD(html)
+    except (AttributeError, TypeError, ValueError) as exc:
+        # If njsparser fails to parse, print a debug message
+        import sys
+        print(
+            "[neotaste_scraper] njsparser.BeautifulFD failed to parse the page HTML",
+            file=sys.stderr,
+        )
+        return []
+
+    anchors: List[Tag] = []
+    for data in fd.find_iter([njsparser.T.Data, njsparser.T.Element]):
+        # Data objects may carry a .content or .value attribute with nested structures
+        content = getattr(data, 'content', None)
+        if content is None:
+            content = getattr(data, 'value', None)
+
+        # If the data is structured, try to dump to JSON string and parse any embedded HTML
+        try:
+            content_str = json.dumps(content, ensure_ascii=False)
+        except (TypeError, ValueError):
+            content_str = str(content)
+
+        anchors.extend(_extract_anchors_from_text(content_str))
+
+    return anchors
+
 
 def fetch_deals_from_city(city_slug: str,
                           filter_mode: Optional[str] = None,
                           lang: str = "de") -> List[Dict[str, Any]]:
     """Scrape deals from a specific city and optionally filter deals.
 
+    Attempts a best-effort to retrieve the fully rendered restaurant list by:
+    1) Parsing the initial page HTML (server-side rendered elements)
+    2) Using `njsparser` to extract Next.js flight data that may contain additional restaurant
+       HTML fragments (preferred)
+    3) Optionally using `njsparser` rendering helpers as a last-resort fallback
+
+    Note: This scraper now prefers `njsparser` (BeautifulFD) to extract Next.js flight data.
     filter_mode may be None or one of 'events','flash','special'.
     """
 
@@ -126,17 +225,67 @@ def fetch_deals_from_city(city_slug: str,
         print(f"Error fetching {url}: {e}")
         return []
 
-    soup = BeautifulSoup(html, "html.parser")
-    results = []
+    print(f"[neotaste_scraper] Fetching {url}", file=sys.stderr)
 
-    # Each restaurant card is an <a> with a restaurant link
+    soup = BeautifulSoup(html, "html.parser")
+    results: List[Dict[str, Any]] = []
+
+    # First, parse what we have from the page HTML
     cards = soup.select("a[href*='/restaurants/']")
 
     for card in cards:
-        # Support legacy callers passing filter_events keyword by letting extract handle it
         result = extract_deals_from_card(card, filter_mode)
         if result:
             results.append(result)
+
+    # Always attempt to use njsparser flight-data extractor
+    anchors_fd = _extract_anchors_from_flight_data(html)
+    if anchors_fd:
+        print(
+            f"[neotaste_scraper] Using njsparser flight-data extractor for {city_slug}",
+            file=sys.stderr,
+        )
+        seen_links = {r['link'] for r in results}
+        for a in anchors_fd:
+            link = a.get('href')
+            if not link:
+                continue
+            full_link = link if link.startswith('http') else BASE_URL + link
+            if full_link in seen_links:
+                continue
+            parsed = extract_deals_from_card(a, filter_mode)
+            if parsed:
+                results.append(parsed)
+                seen_links.add(full_link)
+    else:
+        print(
+            f"[neotaste_scraper] njsparser flight-data extractor returned no anchors for {city_slug}",
+            file=sys.stderr,
+        )
+
+    # If flight data didn't produce everything, try njsparser renderer helpers (last resort)
+    if len(results) < 20:
+        njs_html = _try_njsparser_render(url)
+        if njs_html:
+            print(
+                f"[neotaste_scraper] Using njsparser renderer fallback for {city_slug}",
+                file=sys.stderr,
+            )
+            anchors = _extract_anchors_from_text(njs_html)
+            seen_links = {r['link'] for r in results}
+            for a in anchors:
+                link = a.get('href')
+                if not link:
+                    continue
+                full_link = link if link.startswith('http') else BASE_URL + link
+                if full_link in seen_links:
+                    continue
+                parsed = extract_deals_from_card(a, filter_mode)
+                if parsed:
+                    results.append(parsed)
+                    seen_links.add(full_link)
+        else:
+            print(f"[neotaste_scraper] njsparser renderer fallback produced no anchors for {city_slug}", file=sys.stderr)
 
     return results
 
