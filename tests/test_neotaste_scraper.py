@@ -151,6 +151,7 @@ def test_missing_njsparser_shows_warning(monkeypatch, capsys):
     """When njsparser is not available, a helpful stderr message should be shown."""
     # Force module-level flag to indicate njsparser is not available
     import neotaste_scraper.neotaste_scraper as ns
+    from neotaste_scraper.neotaste_scraper import Verbosity
     monkeypatch.setattr(ns, 'NJS_AVAILABLE', False)
 
     # Make a minimal page (no anchors)
@@ -161,7 +162,7 @@ def test_missing_njsparser_shows_warning(monkeypatch, capsys):
     monkeypatch.setattr('requests.get', fake_get)
 
     # Call the function
-    _ = fetch_deals_from_city('sample-city')
+    _ = fetch_deals_from_city('sample-city', verbosity=Verbosity.NORMAL)
 
     captured = capsys.readouterr()
     assert 'njsparser not installed' in captured.err
