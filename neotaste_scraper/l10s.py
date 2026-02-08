@@ -2,6 +2,7 @@
 localized_strings = {
     'de': {
         'deals': "Angebote",
+        'restaurants': "Restaurants",
         'deals_title': "NeoTaste Deals",
         'table_of_contents': "Inhaltsverzeichnis",
         'restaurant_link_text': "Mehr Informationen/Details zum Angebot",
@@ -19,6 +20,7 @@ localized_strings = {
     },
     'en': {
         'deals': "deals",
+        'restaurants': "restaurants",
         'deals_title': "NeoTaste Deals",
         'table_of_contents': "Table of contents",
         'restaurant_link_text': "More Info/Details about the Offer",

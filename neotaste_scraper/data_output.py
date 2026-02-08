@@ -18,7 +18,7 @@ def print_deals(cities_data, lang="de"):
     """Print the formatted deals (text output)."""
     strings = get_localized_strings(lang)
     for city, city_deals in cities_data.items():
-        print(f"\n{strings['deals_in']} {city.capitalize()}: ({len(city_deals)} {strings['deals']})")
+        print(f"\n{strings['deals_in']} {city.capitalize()}: ({len(city_deals)} {strings['restaurants']})")
         for r in city_deals:
             print(f"  {r['restaurant']}")
             for d in r['deals']:

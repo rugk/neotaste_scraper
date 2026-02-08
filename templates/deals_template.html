@@ -51,7 +51,7 @@
             <h2 id="toc">{{ strings['table_of_contents'] }}</h2>
             <ul>
                 {% for city, city_deals in cities_data.items() %}
-                    <li><a href="#{{ city }}">{{ city.capitalize() }}</a><span style="color: var(--text-muted)"> ({{ city_deals|length }}&nbsp;{{ strings['deals'] }}</span>)</li>
+                    <li><a href="#{{ city }}">{{ city.capitalize() }}</a><span style="color: var(--text-muted)"> ({{ city_deals|length }}&nbsp;{{ strings['restaurants'] }}</span>)</li>
                 {% endfor %}
             </ul>
         </nav>
