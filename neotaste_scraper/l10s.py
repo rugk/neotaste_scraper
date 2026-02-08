@@ -1,3 +1,5 @@
+"""Localization data and helper functions for neotaste_scraper."""
+
 # Localized Strings
 localized_strings = {
     'de': {

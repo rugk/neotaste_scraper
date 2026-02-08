@@ -103,6 +103,7 @@ def extract_deals_from_card(card: Tag,
         return None
     return {"restaurant": name, "deals": results, "link": link}
 
+
 def fetch_deals_from_city(city_slug: str,
                           filter_mode: Optional[str] = None,
                           lang: str = "de",
@@ -125,6 +126,43 @@ def fetch_deals_from_city(city_slug: str,
         return []
 
     # Try JSON API first — it provides full pagination and more results
+    results_by_slug, sources_summary = fetch_api(city_slug, lang, verbosity, url)
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    # 1) Parse server-side HTML cards
+    parse_html(filter_mode, verbosity, results_by_slug, sources_summary, soup)
+
+    # Return deduplicated results
+    results = list(results_by_slug.values())
+
+    print(f"[neotaste_scraper] Final: {len(results)} restaurants from "
+          f"{''.join(sources_summary) if sources_summary else 'no sources'} "
+          f"for {city_slug}", file=sys.stderr)
+    return results
+
+def parse_html(filter_mode, verbosity, results_by_slug, sources_summary, soup):
+    """Parse the HTML for restaurant cards and extract deals, applying filters."""
+    cards = soup.select("a[href*='/restaurants/']")
+    html_count = 0
+    for card in cards:
+        result = extract_deals_from_card(card, filter_mode)
+        if result:
+            slug = get_slug_from_link(result['link'])
+            if slug:
+                results_by_slug[slug] = result
+                html_count += 1
+    if html_count > 0:
+        sources_summary.append(f"HTML: {html_count}")
+    if verbosity.value > Verbosity.SILENT.value:
+        print(
+            f"[neotaste_scraper] HTML parsing found {html_count} restaurants",
+            file=sys.stderr
+        )
+
+
+def fetch_api(city_slug, lang, verbosity, url):
+    """Fetch restaurant data from the NeoTaste JSON API with pagination."""
     try:
         api_results = api_client.fetch_restaurants_from_api(
             city_slug,
@@ -153,34 +191,7 @@ def fetch_deals_from_city(city_slug: str,
 
     if verbosity.value > Verbosity.SILENT.value:
         print(f"[neotaste_scraper] Fetching {url}", file=sys.stderr)
-
-    soup = BeautifulSoup(html, "html.parser")
-
-    # 1) Parse server-side HTML cards
-    cards = soup.select("a[href*='/restaurants/']")
-    html_count = 0
-    for card in cards:
-        result = extract_deals_from_card(card, filter_mode)
-        if result:
-            slug = get_slug_from_link(result['link'])
-            if slug:
-                results_by_slug[slug] = result
-                html_count += 1
-    if html_count > 0:
-        sources_summary.append(f"HTML: {html_count}")
-    if verbosity.value > Verbosity.SILENT.value:
-        print(
-            f"[neotaste_scraper] HTML parsing found {html_count} restaurants",
-            file=sys.stderr
-        )
-
-    # Return deduplicated results
-    results = list(results_by_slug.values())
-
-    print(f"[neotaste_scraper] Final: {len(results)} restaurants from "
-          f"{''.join(sources_summary) if sources_summary else 'no sources'} "
-          f"for {city_slug}", file=sys.stderr)
-    return results
+    return results_by_slug, sources_summary
 
 
 def fetch_all_cities(lang: str = "de") -> List[Dict[str, str]]:

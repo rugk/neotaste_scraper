@@ -1,14 +1,16 @@
+"""Tests for the API client scraper of neotaste_scraper."""
+
 import json
 from unittest.mock import patch
 
 from neotaste_scraper.api_client import fetch_restaurants_from_api
 
 
-class DummyResp:
+class DummyResp:  # pylint: disable=too-few-public-methods
     """A simple dummy response object to simulate requests.Response."""
     def __init__(self, data):
         self._data = data
-    
+
     def json(self):
         """Return the JSON data."""
         return self._data
@@ -39,7 +41,7 @@ def test_fetch_restaurants_paginates_and_extracts_deals():
         "meta": {"page": 2, "isLastPage": True}
     }
 
-    def fake_get(url, timeout=10, headers=None):
+    def fake_get(url, timeout=10, headers=None):  # pylint: disable=unused-argument # (required by requests.get signature)
         if "page=1" in url:
             return DummyResp(page1)
         if "page=2" in url:
@@ -61,20 +63,20 @@ def test_fetch_restaurants_paginates_and_extracts_deals():
 def test_fetch_restaurants_with_api_fixture():
     """Test with real API response fixture (api-response-page.json)."""
     api_page = load_json('tests/json_snippets/api-response-page.json')
-    
+
     # Mock returns the same fixture for all pages, then empty (simulating end)
     call_count = [0]
-    
-    def fake_get(url, timeout=10, headers=None):
+
+    def fake_get(url, timeout=10, headers=None):  # pylint: disable=unused-argument # (required by requests.get signature)
         call_count[0] += 1
         if "page=1" in url:
             return DummyResp(api_page)
         # All other pages return empty (end of pagination)
         return DummyResp({"data": [], "meta": {"isLastPage": True}})
-    
+
     with patch("neotaste_scraper.api_client.requests.get", side_effect=fake_get):
         results = fetch_restaurants_from_api("berlin", lang="de")
-    
+
     # Fixture has 14 restaurants (some omitted in display but present)
     assert len(results) >= 14
     # Check that we extracted deals
@@ -85,4 +87,3 @@ def test_fetch_restaurants_with_api_fixture():
     assert "KONG" in names
     assert "Round & Edgy - Mitte" in names
     assert "PETER PANE Burgergrill & Bar - Friedrichstr." in names
-

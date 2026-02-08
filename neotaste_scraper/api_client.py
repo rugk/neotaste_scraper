@@ -32,6 +32,7 @@ USER_AGENTS = [
 ]
 
 
+# pragma pylint: disable=too-many-nested-blocks, too-many-branches, too-many-locals, too-many-statements
 def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int = 0) -> List[Dict[str, Any]]:
     """Fetch restaurants for a city using the NeoTaste JSON API with pagination.
 
@@ -169,3 +170,4 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
         page += 1
 
     return list(found.values())
+#pragma pylint: enable=too-many-nested-blocks, too-many-branches, too-many-locals, too-many-statements
