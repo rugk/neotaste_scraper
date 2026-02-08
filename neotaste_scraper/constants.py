@@ -1,3 +1,5 @@
+"""Constants and data structures for neotaste_scraper."""
+
 # Constants
 from dataclasses import dataclass
 from enum import Enum

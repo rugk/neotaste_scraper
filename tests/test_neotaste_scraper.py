@@ -81,6 +81,7 @@ def test_fetch_deals_from_city(mock_get, html_file):
     assert "🌟 €5 Wild Bert with Betel 🌟" in result[0]['deals']
     assert "2for1 Aperitif" in result[0]['deals']
 
+
 @pytest.mark.parametrize("html_file", [
     'tests/html_snippets/restaurant-overview-all-cities-simplified.html',
     'tests/html_snippets/restaurant-overview-all-cities.html'
@@ -104,7 +105,9 @@ def test_fetch_all_cities(mock_get, html_file):
 def test_print_deals(mock_print):
     """Test print_deals function (print check)"""
     cities_data = {
-        "sample-city": [{"restaurant": "Sample Restaurant", "deals": ["🌟 €5 Off"], "link": "http://link.com"}]
+        "sample-city": [{"restaurant": "Sample Restaurant",
+                         "deals": ["🌟 €5 Off"],
+                         "link": "http://link.com"}]
     }
     print_deals(cities_data, lang="en")
     mock_print.assert_any_call("\nDeals in Sample-city: (1 deals)")

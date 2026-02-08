@@ -126,13 +126,16 @@ def fetch_deals_from_city(city_slug: str,
 
     # Try JSON API first — it provides full pagination and more results
     try:
-        api_results = api_client.fetch_restaurants_from_api(city_slug, lang=lang, verbosity=verbosity.value)
-    except Exception:
+        api_results = api_client.fetch_restaurants_from_api(
+            city_slug,
+            lang=lang,
+            verbosity=verbosity.value)
+    except Exception:  # pylint: disable=broad-except
         api_results = []
 
     results_by_slug: Dict[str, Dict[str, Any]] = {}
     sources_summary = []
-    
+
     if api_results:
         added_api = 0
         for obj in api_results:
@@ -174,7 +177,9 @@ def fetch_deals_from_city(city_slug: str,
     # Return deduplicated results
     results = list(results_by_slug.values())
 
-    print(f"[neotaste_scraper] Final: {len(results)} restaurants from {', '.join(sources_summary) if sources_summary else 'no sources'} for {city_slug}", file=sys.stderr)
+    print(f"[neotaste_scraper] Final: {len(results)} restaurants from {
+            ', '.join(sources_summary) if sources_summary else 'no sources'
+            } for {city_slug}", file=sys.stderr)
     return results
 
 

@@ -1,3 +1,4 @@
+"""Helper functions for neotaste_scraper."""
 
 # Helper: extract slug from a URL (last path component)
 from typing import Optional

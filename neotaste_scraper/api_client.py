@@ -3,18 +3,21 @@
 This module intentionally keeps dependencies minimal to avoid import cycles
 with the main scraper module.
 """
+from json import JSONDecodeError
 import time
 import random
 from typing import Any, Dict, List
 import requests
 
-SITE_BASE_URL = "https://neotaste.com"
+from neotaste_scraper.constants import BASE_URL
+
 API_BASE = "https://api.neotaste.com"
 
 # Rotating list of real browser User-Agents to avoid 403 blocks
 # (App User-Agents were tested but consistently return 403)
 USER_AGENTS = [
     # Chrome (latest versions)
+    # pylint: disable=line-too-long
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
@@ -49,6 +52,7 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
 
     while page <= max_pages:
         url = f"{API_BASE}/cities/{city_slug}/restaurants?citySlug={city_slug}&includeLoyalty=true&page={page}"
+
         if verbosity:
             print(f"[api_client] requesting page {page}: {url}")
 
@@ -59,8 +63,10 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
             try:
                 headers = {"User-Agent": _get_random_user_agent()}
                 resp = requests.get(url, timeout=10, headers=headers)
-            except Exception:
+            except requests.RequestException as e:
+                print(f"[api_client] request error: {e}")
                 resp = None
+
             # If no response object, break retries
             if resp is None:
                 attempts += 1
@@ -70,25 +76,29 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
             status_attr = getattr(resp, 'status_code', None)
             try:
                 status = int(status_attr) if status_attr is not None else 200
-            except Exception:
+            except TypeError:
                 status = 200
 
             if status == 403:
-                print("[api_client] page response status:", status, ", failed with user agent: ", headers["User-Agent"])
+                print("[api_client] page response status:", status,
+                      ", failed with user agent: ", headers["User-Agent"])
 
                 # Respect Retry-After header when present
-                ra = resp.headers.get('Retry-After') if hasattr(resp, 'headers') else None
+                ra = resp.headers.get(
+                    'Retry-After') if hasattr(resp, 'headers') else None
                 if ra:
                     try:
                         wait = int(ra)
-                    except Exception:
+                    except TypeError:
                         # Non-numeric Retry-After; fallback to exponential backoff
                         wait = int(base_backoff * (2 ** attempts))
                 else:
                     # exponential backoff with jitter
-                    wait = base_backoff * (2 ** attempts) + random.random() * 0.5
+                    wait = base_backoff * \
+                        (2 ** attempts) + random.random() * 0.5
                 if verbosity:
-                    print(f"[api_client] 403 received, backing off {wait:.1f}s (attempt {attempts+1})")
+                    print(f"[api_client] 403 received, backing off {wait:.1f}s" +
+                          f"(attempt {attempts+1})")
                 time.sleep(wait)
                 attempts += 1
                 continue
@@ -102,20 +112,18 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
 
         # Recompute status
         status_attr = getattr(resp, 'status_code', None)
-        try:
-            status = int(status_attr) if status_attr is not None else 200
-        except Exception:
-            status = 200
+        status = int(status_attr) if status_attr is not None else 200
 
         if status != 200:
             break
 
         if verbosity:
-            print("[api_client] page response status:", status, ", worked with user agent: ", headers["User-Agent"])
+            print("[api_client] page response status:", status,
+                  ", worked with user agent: ", headers["User-Agent"])
 
         try:
             data = resp.json()
-        except Exception:
+        except JSONDecodeError:
             break
 
         # If the JSON doesn't parse to a dict (e.g. test mocks), stop
@@ -148,7 +156,7 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
                 found[slug] = {
                     "restaurant": name,
                     "deals": deals,
-                    "link": f"{SITE_BASE_URL}/{lang}/restaurants/{slug}"
+                    "link": f"{BASE_URL}/{lang}/restaurants/{slug}"
                 }
 
         # Determine if we should continue paging

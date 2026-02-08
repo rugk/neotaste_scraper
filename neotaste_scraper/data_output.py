@@ -31,6 +31,7 @@ def output_json(cities_data, filename: str = "output.json"):
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(cities_data, f, ensure_ascii=False, indent=4)
 
+
 class HtmlOptions(TypedDict, total=False):
     """Options for HTML output. This is used to pass additional options."""
     filter_mode: Optional[str]
