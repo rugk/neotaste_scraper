@@ -110,7 +110,7 @@ def test_print_deals(mock_print):
                          "link": "http://link.com"}]
     }
     print_deals(cities_data, lang="en")
-    mock_print.assert_any_call("\nDeals in Sample-city: (1 deals)")
+    mock_print.assert_any_call("\nDeals in Sample-city: (1 restaurants)")
     mock_print.assert_any_call("  Sample Restaurant")
     mock_print.assert_any_call("   - 🌟 €5 Off")
     mock_print.assert_any_call("   → http://link.com")
