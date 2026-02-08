@@ -1,15 +1,16 @@
 import json
-import types
 from unittest.mock import patch
 
 from neotaste_scraper.api_client import fetch_restaurants_from_api
 
 
 class DummyResp:
+    """A simple dummy response object to simulate requests.Response."""
     def __init__(self, data):
         self._data = data
     
     def json(self):
+        """Return the JSON data."""
         return self._data
 
 

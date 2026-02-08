@@ -363,6 +363,8 @@ def fetch_deals_from_city(city_slug: str,
         api_results = []
 
     results_by_slug: Dict[str, Dict[str, Any]] = {}
+    sources_summary = []
+    
     if api_results:
         added_api = 0
         for obj in api_results:
@@ -374,8 +376,9 @@ def fetch_deals_from_city(city_slug: str,
             if slug and slug not in results_by_slug:
                 results_by_slug[slug] = obj
                 added_api += 1
+        sources_summary.append(f"API: {added_api}")
         if verbosity.value > Verbosity.SILENT.value:
-            print(f"[neotaste_scraper] api client added {added_api} restaurants", file=sys.stderr)
+            print(f"[neotaste_scraper] API client added {added_api} restaurants", file=sys.stderr)
 
     if verbosity.value > Verbosity.SILENT.value:
         print(f"[neotaste_scraper] Fetching {url}", file=sys.stderr)
@@ -401,6 +404,8 @@ def fetch_deals_from_city(city_slug: str,
             if slug:
                 results_by_slug[slug] = result
                 html_count += 1
+    if html_count > 0:
+        sources_summary.append(f"HTML: {html_count}")
     if verbosity.value > Verbosity.SILENT.value:
         print(
             f"[neotaste_scraper] HTML parsing found {html_count} restaurants",
@@ -408,28 +413,29 @@ def fetch_deals_from_city(city_slug: str,
         )
 
     # 2) Extract structured restaurant objects from flight-data (has deals)
-    before_structured = len(results_by_slug)
     structured = _extract_structured_restaurants_from_flight_data(
         html, city_slug=city_slug, lang=lang, verbosity=verbosity
     )
+    added_structured = 0
     if structured:
-        added = 0
         for obj in structured:
             slug = get_slug_from_link(obj['link'])
             if slug and slug not in results_by_slug:
                 results_by_slug[slug] = obj
-                added += 1
+                added_structured += 1
+        if added_structured > 0:
+            sources_summary.append(f"Flight-data: {added_structured}")
         if verbosity.value > Verbosity.SILENT.value:
             print(
-                f"[neotaste_scraper] structured extractor added {added}/"
+                f"[neotaste_scraper] Flight-data extractor added {added_structured}/"
                 f"{len(structured)} new restaurants",
                 file=sys.stderr
             )
 
     # 3) Try HTML anchor extraction from flight-data
     anchors_fd = _extract_anchors_from_flight_data(html, verbosity=verbosity)
+    added_anchors = 0
     if anchors_fd:
-        added_anchors = 0
         for a in anchors_fd:
             link = a.get('href')
             if not link:
@@ -444,21 +450,18 @@ def fetch_deals_from_city(city_slug: str,
                     results_by_slug[slug] = parsed
                     added_anchors += 1
         if added_anchors > 0:
-            print(
-                "[neotaste_scraper] Using njsparser flight-data extractor",
-                file=sys.stderr
-            )
+            sources_summary.append(f"Anchors: {added_anchors}")
         if verbosity.value > Verbosity.SILENT.value:
             print(
-                f"[neotaste_scraper] anchor extractor added {added_anchors}/"
+                f"[neotaste_scraper] Anchor extractor added {added_anchors}/"
                 f"{len(anchors_fd)} new restaurants",
                 file=sys.stderr
             )
 
     # Return deduplicated results
     results = list(results_by_slug.values())
-    if verbosity.value > Verbosity.SILENT.value:
-        print(f"[neotaste_scraper] final result: {len(results)} unique restaurants after deduplication", file=sys.stderr)
+
+    print(f"[neotaste_scraper] Final: {len(results)} restaurants from {', '.join(sources_summary) if sources_summary else 'no sources'} for {city_slug}", file=sys.stderr)
     return results
 
 

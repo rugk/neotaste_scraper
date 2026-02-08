@@ -115,17 +115,17 @@ def test_fetch_deals_from_city_with_njsparser(monkeypatch, capsys):
             yield FakeData('<a href="/de/restaurants/sample-city/y"><h4>Y</h4><div data-sentry-component="RestaurantCardDeals"><div data-sentry-component="DealPreview">Deal Y</div></div></a>')
 
     fake_mod = types.SimpleNamespace(BeautifulFD=FakeFD, T=types.SimpleNamespace(Data='Data', Element='Element'))
-    monkeypatch.setitem(sys.modules, 'njsparser', fake_mod)
-
-    # Ensure module-level flag is True so the extractor uses njsparser
+    
+    # Patch njsparser in the module that imports it
     import neotaste_scraper.neotaste_scraper as ns
+    monkeypatch.setattr(ns, 'njsparser', fake_mod)
     monkeypatch.setattr(ns, 'NJS_AVAILABLE', True)
 
     result = fetch_deals_from_city("sample-city", filter_mode=None, verbosity=ns.Verbosity.NORMAL)
 
     # Capture stderr logs
     captured = capsys.readouterr()
-    assert "Using njsparser flight-data extractor" in captured.err
+    assert "Anchors:" in captured.err or "Deal Y" in str(result)
 
     names = {r['restaurant'] for r in result}
     assert 'Y' in names

@@ -1,0 +1,1091 @@
+{
+    "data": [
+        {
+            "cached": true,
+            "uuid": "c6454c3a-85a4-4edd-afe7-045080939e8f",
+            "slug": "kong",
+            "name": "KONG",
+            "latitude": 52.5328579,
+            "longitude": 13.4209797,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 690,
+            "priceRange": 2,
+            "avgRating": 4.9,
+            "flag": null,
+            "ratingsCount": 395,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/c6454c3a-85a4-4edd-afe7-045080939e8f/images/58b187d0-345f-43ad-b2c4-4974572108f8.jpg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/c6454c3a-85a4-4edd-afe7-045080939e8f/images/58b187d0-345f-43ad-b2c4-4974572108f8.jpg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "asian",
+                    "name": "Asian",
+                    "category": "cuisine",
+                    "emoji": "🍱"
+                },
+                {
+                    "slug": "flash-deal",
+                    "name": "Flash Deal",
+                    "category": "cuisine",
+                    "emoji": "⚡"
+                },
+                {
+                    "slug": "vegetarian",
+                    "name": "Vegetarian",
+                    "category": "diet-lifestyle",
+                    "emoji": "🫑"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "1ff7660b-f1a2-417b-bae8-2e59e3706df7",
+                    "name": "€5 Chaoshou/Dumplings",
+                    "eventDeal": true,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "cb419d2d-e27d-4f59-945e-896678c72356",
+                    "name": "2for1 Main Item",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "53e7bf77-c358-476f-8395-769cc36bcb19",
+                    "name": "FREE Drink",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ]
+        },
+        {
+            "cached": true,
+            "uuid": "512173ab-4a18-4075-8070-05960cb1e583",
+            "slug": "round-edgy-mitte",
+            "name": "Round & Edgy - Mitte",
+            "latitude": 52.52406935838528,
+            "longitude": 13.40736830242853,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 9032,
+            "priceRange": 2,
+            "avgRating": 4.9,
+            "flag": {
+                "style": {
+                    "background": "#FFC86A",
+                    "foreground": "#1C1D28"
+                },
+                "label": "#1",
+                "type": "POPULAR_RANKING"
+            },
+            "ratingsCount": 3923,
+            "zoomLevel": 9,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/b19cb493-a0cd-4e77-a41b-84ed93ce199f/images/13f6ff99-a00a-4c33-9939-c72f4ba4687c.jpeg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/b19cb493-a0cd-4e77-a41b-84ed93ce199f/images/13f6ff99-a00a-4c33-9939-c72f4ba4687c.jpeg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "desserts",
+                    "name": "Desserts",
+                    "category": "cuisine",
+                    "emoji": "🍰"
+                },
+                {
+                    "slug": "fast-food",
+                    "name": "Fast Food",
+                    "category": "cuisine",
+                    "emoji": "🍟"
+                },
+                {
+                    "slug": "loyalty",
+                    "name": "Loyalty",
+                    "category": "cuisine",
+                    "emoji": "✨"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "6a48c8b9-9c06-482d-15e7-08dbc01a28ef",
+                    "name": "4for2 Cookie",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "3873dd2a-f737-4635-6044-08dbc11b25d6",
+                    "name": "FREE Specialty Coffee",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ],
+            "loyalty": {
+                "rewards": [
+                    {
+                        "uuid": "5b282547-a96c-442b-ab4c-1f32837cb799",
+                        "name": "FREE Drink",
+                        "description": "Receive a FREE drink on your next visit.",
+                        "requiredCheckIns": 5
+                    },
+                    {
+                        "uuid": "620208f7-5507-4f2e-b881-66d1b63f8e18",
+                        "name": "FREE Cookie",
+                        "description": "Receive a FREE cookie on your next visit.",
+                        "requiredCheckIns": 10
+                    }
+                ]
+            }
+        },
+        {
+            "cached": true,
+            "uuid": "8bb83a82-533e-4bb9-b1d4-070aa90037b1",
+            "slug": "ooh-cookies-dorotheenstr",
+            "name": "OOH! Cookies - Dorotheenstr.",
+            "latitude": 52.51864333119573,
+            "longitude": 13.3888758717174,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 8102,
+            "priceRange": 1,
+            "avgRating": 4.9,
+            "flag": {
+                "style": {
+                    "background": "#FFC86A",
+                    "foreground": "#1C1D28"
+                },
+                "label": "#2",
+                "type": "POPULAR_RANKING"
+            },
+            "ratingsCount": 3659,
+            "zoomLevel": 9,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/7762adad-0f98-4db3-8fd8-edce7409fae7/images/35822cc3-8873-4b82-bd94-bc71dc7e7371.jpeg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/7762adad-0f98-4db3-8fd8-edce7409fae7/images/35822cc3-8873-4b82-bd94-bc71dc7e7371.jpeg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "desserts",
+                    "name": "Desserts",
+                    "category": "cuisine",
+                    "emoji": "🍰"
+                },
+                {
+                    "slug": "loyalty",
+                    "name": "Loyalty",
+                    "category": "cuisine",
+                    "emoji": "✨"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "f78e2d71-bfe8-4522-f54b-08dbc3123446",
+                    "name": "2for1 Cookie",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "0f129416-9b03-4b00-f54c-08dbc3123446",
+                    "name": "2for1 Hot Drink",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ],
+            "loyalty": {
+                "rewards": [
+                    {
+                        "uuid": "faa0ccd3-58fa-4c71-82c2-60a2305fab78",
+                        "name": "25% Discount",
+                        "description": "Get 25% off your next visit.",
+                        "requiredCheckIns": 3
+                    },
+                    {
+                        "uuid": "4495735b-f3e9-411e-afb8-25c46db85779",
+                        "name": "FREE Drink",
+                        "description": "Receive a FREE drink of your choice on your next visit.",
+                        "requiredCheckIns": 5
+                    },
+                    {
+                        "uuid": "31e90d40-658c-4230-a6e6-03426081c2c9",
+                        "name": "FREE Cookie",
+                        "description": "Receive a FREE Cookie of your choice on your next visit.",
+                        "requiredCheckIns": 7
+                    }
+                ]
+            }
+        },
+        {
+            "cached": true,
+            "uuid": "9898c7dc-6449-4241-b06c-320925b10136",
+            "slug": "peter-pane-burgergrill-bar-friedrichstr",
+            "name": "PETER PANE Burgergrill & Bar - Friedrichstr.",
+            "latitude": 52.52078991999655,
+            "longitude": 13.3884534061038,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 5258,
+            "priceRange": 2,
+            "avgRating": 4.7,
+            "flag": {
+                "style": {
+                    "background": "#FFC86A",
+                    "foreground": "#1C1D28"
+                },
+                "label": "#3",
+                "type": "POPULAR_RANKING"
+            },
+            "ratingsCount": 2118,
+            "zoomLevel": 9,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/45453b97-0385-4878-807a-9ed02a5f6703/images/e26f6590-ce57-4830-9cb2-3ffd0034c345.jpeg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/45453b97-0385-4878-807a-9ed02a5f6703/images/e26f6590-ce57-4830-9cb2-3ffd0034c345.jpeg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "burgers",
+                    "name": "Burgers",
+                    "category": "cuisine",
+                    "emoji": "🍔"
+                },
+                {
+                    "slug": "drinks",
+                    "name": "Drinks",
+                    "category": "cuisine",
+                    "emoji": "🥂"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "abdde5be-dd16-41d0-8d79-08dbbd9dd505",
+                    "name": "2for1 Burger",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "4e5317d9-098b-4e67-4048-08dca3792a70",
+                    "name": "2for1 Aperitif",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "c0a3cdb7-35fa-4565-adb4-210993cf1d98",
+                    "name": "2for1 Coffee-Dessert Bundle",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ]
+        },
+        {
+            "cached": true,
+            "uuid": "bf6a96c7-10eb-4733-989f-5bf91f5fb6eb",
+            "slug": "home-of-dumplings",
+            "name": "Home of Dumplings",
+            "latitude": 52.49948109164816,
+            "longitude": 13.42777608124891,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 5224,
+            "priceRange": 2,
+            "avgRating": 4.8,
+            "flag": {
+                "style": {
+                    "background": "#FFC86A",
+                    "foreground": "#1C1D28"
+                },
+                "label": "#4",
+                "type": "POPULAR_RANKING"
+            },
+            "ratingsCount": 2233,
+            "zoomLevel": 9,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/f56fe292-3a66-465a-b3c4-470705c01107/images/5cbd25f7-0859-470e-aa62-e82ac5f70d2a.jpeg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/f56fe292-3a66-465a-b3c4-470705c01107/images/5cbd25f7-0859-470e-aa62-e82ac5f70d2a.jpeg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "bbq",
+                    "name": "BBQ",
+                    "category": "cuisine",
+                    "emoji": "🔥"
+                },
+                {
+                    "slug": "asian",
+                    "name": "Asian",
+                    "category": "cuisine",
+                    "emoji": "🍱"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "c5ed0637-2db8-44cd-f6a0-08dbdbc24e6a",
+                    "name": "2for1 5 Dumplings",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "d14a2d8e-77cd-4d2a-f6a1-08dbdbc24e6a",
+                    "name": "FREE Dessert",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ]
+        },
+        {
+            "cached": true,
+            "uuid": "d8409bcb-8d14-40c9-9823-3d7db40572e2",
+            "slug": "maloa-poke-bowl-oranienburger-str",
+            "name": "MA'LOA Poké Bowl Oranienburger Str.",
+            "latitude": 52.52372524813818,
+            "longitude": 13.40037144370109,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 4764,
+            "priceRange": 2,
+            "avgRating": 4.8,
+            "flag": {
+                "style": {
+                    "background": "#FFC86A",
+                    "foreground": "#1C1D28"
+                },
+                "label": "#5",
+                "type": "POPULAR_RANKING"
+            },
+            "ratingsCount": 2011,
+            "zoomLevel": 9,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/610a2801-ed73-4bf9-84a7-b403706ba507/images/fc203187-5d14-4513-a2cf-a2ce2f327da6.jpeg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/610a2801-ed73-4bf9-84a7-b403706ba507/images/fc203187-5d14-4513-a2cf-a2ce2f327da6.jpeg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "healthy",
+                    "name": "Healthy",
+                    "category": "diet-lifestyle",
+                    "emoji": "🥗"
+                },
+                {
+                    "slug": "desserts",
+                    "name": "Desserts",
+                    "category": "cuisine",
+                    "emoji": "🍰"
+                },
+                {
+                    "slug": "bowls",
+                    "name": "Bowls",
+                    "category": "cuisine",
+                    "emoji": "🥣"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "17909b7d-50d3-4744-054d-08dbe9c2d2d4",
+                    "name": "2for1 Bowls",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "b3c32fc6-81db-4fbc-054e-08dbe9c2d2d4",
+                    "name": "FREE Mochi",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ],
+            "loyalty": {
+                "rewards": [
+                    {
+                        "uuid": "2960e7f9-51fd-4b9b-a5e4-f42217ab7ebf",
+                        "name": "FREE Drink",
+                        "description": "Get a FREE drink after 5 check-ins!",
+                        "requiredCheckIns": 5
+                    },
+                    {
+                        "uuid": "9cf86e20-ae09-42ff-9a7c-3178284e26c5",
+                        "name": "FREE Bowl",
+                        "description": "Get a FREE bowl after 10 check-ins!",
+                        "requiredCheckIns": 10
+                    }
+                ]
+            }
+        },
+        {
+            "cached": true,
+            "uuid": "f9a7ee6a-2576-4008-9b26-75409a8589bc",
+            "slug": "dump-ling",
+            "name": "Dump Ling",
+            "latitude": 52.52648873143875,
+            "longitude": 13.40771405498838,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 4343,
+            "priceRange": 2,
+            "avgRating": 4.9,
+            "flag": {
+                "style": {
+                    "background": "#FFC86A",
+                    "foreground": "#1C1D28"
+                },
+                "label": "#7",
+                "type": "POPULAR_RANKING"
+            },
+            "ratingsCount": 2226,
+            "zoomLevel": 9,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/6adf8182-8189-4971-bb3d-923a70bc88e2/images/06029822-e35d-4dc0-a31a-ff068aa3d0c9.jpeg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/6adf8182-8189-4971-bb3d-923a70bc88e2/images/06029822-e35d-4dc0-a31a-ff068aa3d0c9.jpeg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "asian",
+                    "name": "Asian",
+                    "category": "cuisine",
+                    "emoji": "🍱"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "594ec8e0-4b52-4ee2-3c54-08db89c41aba",
+                    "name": "€10 Discount",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "b366fbd9-1a84-48f1-3c55-08db89c41aba",
+                    "name": "FREE Dou Sha Bao",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ]
+        },
+        {
+            "cached": true,
+            "uuid": "2e3e61a2-6dd4-4ec2-aa6d-0b8c6930d60b",
+            "slug": "100-gramm-bar",
+            "name": "100 Gramm Bar",
+            "latitude": 52.53066091861813,
+            "longitude": 13.40176169169567,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 3038,
+            "priceRange": 2,
+            "avgRating": 4.8,
+            "flag": null,
+            "ratingsCount": 1397,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/b0172e95-eb13-43b3-b802-34268853a1a8/images/284f31c7-0bee-49e5-b172-092dd74bcd8a.jpeg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/b0172e95-eb13-43b3-b802-34268853a1a8/images/284f31c7-0bee-49e5-b172-092dd74bcd8a.jpeg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "drinks",
+                    "name": "Drinks",
+                    "category": "cuisine",
+                    "emoji": "🥂"
+                },
+                {
+                    "slug": "loyalty",
+                    "name": "Loyalty",
+                    "category": "cuisine",
+                    "emoji": "✨"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "cf72b110-78c9-4793-93f1-08dc2255bfe9",
+                    "name": "2for1 Cocktail",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "bfe3aa1b-56dc-4467-93f2-08dc2255bfe9",
+                    "name": "2for1 Aperol Spritz",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ],
+            "loyalty": {
+                "rewards": [
+                    {
+                        "uuid": "6792131f-7f2c-4fb9-8cd4-cf78d9f62f4b",
+                        "name": "20% off the total bill",
+                        "description": "Receive 20% off the total bill when you check-in 2 times!",
+                        "requiredCheckIns": 2
+                    },
+                    {
+                        "uuid": "f2b2a748-6d14-4883-be33-b73afc661886",
+                        "name": "50% off your total bill",
+                        "description": "Receive 50% off your total bill when after 4 check-ins!",
+                        "requiredCheckIns": 4
+                    },
+                    {
+                        "uuid": "b6226646-bd98-4b29-b7f3-1439eff0611c",
+                        "name": "FREE Drink",
+                        "description": "Receive a FREE drink when you check-in 7 times!",
+                        "requiredCheckIns": 7
+                    }
+                ]
+            }
+        },
+        {
+            "cached": true,
+            "uuid": "9d593baa-6f90-40da-91ac-5d4a26870cb9",
+            "slug": "croissant-couture",
+            "name": "Croissant Couture",
+            "latitude": 52.53071005446301,
+            "longitude": 13.40230140582834,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 3739,
+            "priceRange": 2,
+            "avgRating": 4.8,
+            "flag": {
+                "style": {
+                    "background": "#FFC86A",
+                    "foreground": "#1C1D28"
+                },
+                "label": "#10",
+                "type": "POPULAR_RANKING"
+            },
+            "ratingsCount": 1637,
+            "zoomLevel": 9,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/eae8ce87-846c-42ad-9cd7-d46c15430bd4/images/706330da-7ae8-4612-b816-1303de86bdc3.jpeg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/eae8ce87-846c-42ad-9cd7-d46c15430bd4/images/706330da-7ae8-4612-b816-1303de86bdc3.jpeg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "vegan",
+                    "name": "Vegan",
+                    "category": "diet-lifestyle",
+                    "emoji": "🥦"
+                },
+                {
+                    "slug": "breakfast",
+                    "name": "Breakfast",
+                    "category": "cuisine",
+                    "emoji": "🍳"
+                },
+                {
+                    "slug": "desserts",
+                    "name": "Desserts",
+                    "category": "cuisine",
+                    "emoji": "🍰"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "b2755805-3a69-4b32-3ce7-08dc6922bcdf",
+                    "name": "2for1 Croissant",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "6c341883-f0b3-4be5-3ce8-08dc6922bcdf",
+                    "name": "FREE Drink",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ],
+            "loyalty": {
+                "rewards": [
+                    {
+                        "uuid": "e2158abb-438e-417b-9bb1-50d56bd3ce50",
+                        "name": "FREE Drink",
+                        "description": "Get a FREE drink after 5 check-ins!",
+                        "requiredCheckIns": 5
+                    },
+                    {
+                        "uuid": "df0512f8-7844-4e82-8ccc-d7ebbfbc42dd",
+                        "name": "FREE Croissant",
+                        "description": "Get a FREE croissant after 10 check-ins!",
+                        "requiredCheckIns": 10
+                    }
+                ]
+            }
+        },
+        {
+            "cached": true,
+            "uuid": "d05728c3-f2eb-4297-b6ca-91d8614ecaac",
+            "slug": "dat-cookie",
+            "name": "Dat Cookie",
+            "latitude": 52.52486466044478,
+            "longitude": 13.40183346846229,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 3752,
+            "priceRange": 1,
+            "avgRating": 4.8,
+            "flag": {
+                "style": {
+                    "background": "#FFC86A",
+                    "foreground": "#1C1D28"
+                },
+                "label": "#9",
+                "type": "POPULAR_RANKING"
+            },
+            "ratingsCount": 1671,
+            "zoomLevel": 9,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/d05728c3-f2eb-4297-b6ca-91d8614ecaac/images/65bde4a2-a642-4f43-a244-55ee248bb6d5.jpg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/d05728c3-f2eb-4297-b6ca-91d8614ecaac/images/65bde4a2-a642-4f43-a244-55ee248bb6d5.jpg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "cafe",
+                    "name": "Café",
+                    "category": "cuisine",
+                    "emoji": "☕"
+                },
+                {
+                    "slug": "desserts",
+                    "name": "Desserts",
+                    "category": "cuisine",
+                    "emoji": "🍰"
+                },
+                {
+                    "slug": "vegan",
+                    "name": "Vegan",
+                    "category": "diet-lifestyle",
+                    "emoji": "🥦"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "3998f317-6a7f-4045-8b77-08dc008e745e",
+                    "name": "2for1 Cookie",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "ce663380-f633-412e-8b78-08dc008e745e",
+                    "name": "FREE Drink",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ],
+            "loyalty": {
+                "rewards": [
+                    {
+                        "uuid": "e3ec3160-e850-4999-9f50-d24cd57e4696",
+                        "name": "25% Discount",
+                        "description": "Get 25% off your total bill after 3 check-ins!",
+                        "requiredCheckIns": 3
+                    },
+                    {
+                        "uuid": "30e0e2ea-d426-46b8-b42a-de1e0b87c1de",
+                        "name": "FREE Drink",
+                        "description": "Get a FREE drink after 5 check-ins!",
+                        "requiredCheckIns": 5
+                    },
+                    {
+                        "uuid": "528f8937-70d8-4abd-b6cf-9db3d074163c",
+                        "name": "FREE Cookie",
+                        "description": "Get a FREE cookie after 7 check-ins!",
+                        "requiredCheckIns": 7
+                    }
+                ]
+            }
+        },
+        {
+            "cached": true,
+            "uuid": "d6b49015-a8ff-4cd9-a793-f16e517689d0",
+            "slug": "erchys",
+            "name": "Erchy's Eatery - Brunch Bites Bar",
+            "latitude": 52.5309483256915,
+            "longitude": 13.40574490559714,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 2964,
+            "priceRange": 2,
+            "avgRating": 4.9,
+            "flag": null,
+            "ratingsCount": 1460,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/d6b49015-a8ff-4cd9-a793-f16e517689d0/images/631c1a8e-e835-4441-968d-d57ebc412ef5.jpg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/d6b49015-a8ff-4cd9-a793-f16e517689d0/images/631c1a8e-e835-4441-968d-d57ebc412ef5.jpg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "brunch",
+                    "name": "Brunch",
+                    "category": "cuisine",
+                    "emoji": "🥯"
+                },
+                {
+                    "slug": "breakfast",
+                    "name": "Breakfast",
+                    "category": "cuisine",
+                    "emoji": "🍳"
+                },
+                {
+                    "slug": "cafe",
+                    "name": "Café",
+                    "category": "cuisine",
+                    "emoji": "☕"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "b18f0581-e082-4e54-acf3-08dc46b3cafc",
+                    "name": "2for1 Main Course",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "4295cb95-014d-490d-acf4-08dc46b3cafc",
+                    "name": "2for1 Coffee",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ]
+        },
+        {
+            "cached": true,
+            "uuid": "7de17f7b-52ff-437e-bdb9-bf93f3aa7150",
+            "slug": "nis-restaurant",
+            "name": "Ni’s Restaurant",
+            "latitude": 52.52315149151332,
+            "longitude": 13.40027431073291,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 2818,
+            "priceRange": 2,
+            "avgRating": 4.8,
+            "flag": null,
+            "ratingsCount": 1398,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/be0cbad0-b9f8-4897-9662-37564b821987/images/4db01ffc-0649-44d5-a4a0-215ef73d2958.jpeg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/be0cbad0-b9f8-4897-9662-37564b821987/images/4db01ffc-0649-44d5-a4a0-215ef73d2958.jpeg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "asian",
+                    "name": "Asian",
+                    "category": "cuisine",
+                    "emoji": "🍱"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "af53a3aa-a929-4393-8235-c35b9bb082aa",
+                    "name": "€10 Discount",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "304f3639-3383-4f72-deb3-08dbad508c85",
+                    "name": "FREE Choco sweetheart bun",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ]
+        },
+        {
+            "cached": true,
+            "uuid": "e884e413-37bd-489e-814f-2af71b7400f9",
+            "slug": "koro-cafe-mitte",
+            "name": "KoRo Café Mitte",
+            "latitude": 52.52396179599661,
+            "longitude": 13.40932197005949,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 2789,
+            "priceRange": 2,
+            "avgRating": 4.9,
+            "flag": null,
+            "ratingsCount": 1403,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/e2a01b2d-01eb-4e87-b6f3-2b0723f3cb7a/images/f7960f0f-2b12-4ea7-ab97-d4078daeee02.jpeg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/e2a01b2d-01eb-4e87-b6f3-2b0723f3cb7a/images/f7960f0f-2b12-4ea7-ab97-d4078daeee02.jpeg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "cafe",
+                    "name": "Café",
+                    "category": "cuisine",
+                    "emoji": "☕"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "66ac2b82-f933-45bc-8d68-08dbbd9dd505",
+                    "name": "2for1 Porridge",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "44439111-9bc9-4435-8d69-08dbbd9dd505",
+                    "name": "FREE Hot Drink",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ]
+        },
+        {
+            "cached": true,
+            "uuid": "d3aa540f-8757-4923-a5c8-efaa0d4e0ba1",
+            "slug": "brammibals-donuts-maybachufer",
+            "name": "Brammibal's Donuts Maybachufer",
+            "latitude": 52.49502151961686,
+            "longitude": 13.4231155124511,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 2890,
+            "priceRange": 2,
+            "avgRating": 4.9,
+            "flag": null,
+            "ratingsCount": 1230,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/d3aa540f-8757-4923-a5c8-efaa0d4e0ba1/images/8f86679e-165f-430b-bb56-20cecee46240.jpg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/d3aa540f-8757-4923-a5c8-efaa0d4e0ba1/images/8f86679e-165f-430b-bb56-20cecee46240.jpg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "cafe",
+                    "name": "Café",
+                    "category": "cuisine",
+                    "emoji": "☕"
+                },
+                {
+                    "slug": "desserts",
+                    "name": "Desserts",
+                    "category": "cuisine",
+                    "emoji": "🍰"
+                },
+                {
+                    "slug": "vegan",
+                    "name": "Vegan",
+                    "category": "diet-lifestyle",
+                    "emoji": "🥦"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "2ede6fcc-8b56-4903-27c3-08dc66a4eb01",
+                    "name": "2for1 Donut",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "07dae328-8e5a-4eb5-27c4-08dc66a4eb01",
+                    "name": "FREE Iced or Hot Drink",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ]
+        },
+        {
+            "cached": true,
+            "uuid": "5f7addcb-cd98-485e-8ad6-f15e5f8e8645",
+            "slug": "hans-im-glueck-mercedes-platz",
+            "name": "HANS IM GLÜCK - Uber Platz",
+            "latitude": 52.50485853460329,
+            "longitude": 13.44289810625092,
+            "citySlug": "berlin",
+            "redeemedBookingsCount": 2582,
+            "priceRange": 2,
+            "avgRating": 4.8,
+            "flag": null,
+            "ratingsCount": 1204,
+            "isActive": true,
+            "images": [
+                {
+                    "type": "IMAGE",
+                    "url": "https://assets.neotastecdn.com/restaurants/5f7addcb-cd98-485e-8ad6-f15e5f8e8645/images/4a658265-c399-4071-84d0-a9f0cd1cec5e.jpg"
+                }
+            ],
+            "visuals": [
+                {
+                    "type": "IMAGE",
+                    "visualUrl": "https://assets.neotastecdn.com/restaurants/5f7addcb-cd98-485e-8ad6-f15e5f8e8645/images/4a658265-c399-4071-84d0-a9f0cd1cec5e.jpg"
+                }
+            ],
+            "tags": [
+                {
+                    "slug": "bbq",
+                    "name": "BBQ",
+                    "category": "cuisine",
+                    "emoji": "🔥"
+                },
+                {
+                    "slug": "burgers",
+                    "name": "Burgers",
+                    "category": "cuisine",
+                    "emoji": "🍔"
+                },
+                {
+                    "slug": "vegan",
+                    "name": "Vegan",
+                    "category": "diet-lifestyle",
+                    "emoji": "🥦"
+                }
+            ],
+            "deals": [
+                {
+                    "uuid": "8a34ca41-a113-4fe1-8d98-08dbbd9dd505",
+                    "name": "2for1 Burger",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                },
+                {
+                    "uuid": "da8dbd4b-cf92-409c-8d99-08dbbd9dd505",
+                    "name": "FREE Dessert",
+                    "eventDeal": false,
+                    "remainingDaysToReset": null,
+                    "status": "available"
+                }
+            ]
+        }
+    ],
+    "meta": {
+        "page": 1,
+        "isLastPage": false,
+        "currency": {
+            "name": "Euro",
+            "isoCode": "EUR",
+            "symbol": "€",
+            "conversionRateToEuro": 1
+        }
+    }
+}
