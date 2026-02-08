@@ -177,9 +177,9 @@ def fetch_deals_from_city(city_slug: str,
     # Return deduplicated results
     results = list(results_by_slug.values())
 
-    print(f"[neotaste_scraper] Final: {len(results)} restaurants from {
-            ', '.join(sources_summary) if sources_summary else 'no sources'
-            } for {city_slug}", file=sys.stderr)
+    print(f"[neotaste_scraper] Final: {len(results)} restaurants from "
+          f"{''.join(sources_summary) if sources_summary else 'no sources'} "
+          f"for {city_slug}", file=sys.stderr)
     return results
 
 
