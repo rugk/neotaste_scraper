@@ -15,7 +15,7 @@ localized_strings = {
         'city_page': "Seite der Stadt",
         'restaurant_details': "Mehr Details zum Restaurant",
         'link_source_code': "Quellcode auf GitHub",
-        'back_to_toc': "Zurück zum Inhaltsverzeichnis",
+        'back_to_top': "Nach oben scrollen",
         'no_filter': "Nicht filtern",
         'use_filter': "Nur spezielle anzeigen",
         'in_english': "In English"
@@ -33,7 +33,7 @@ localized_strings = {
         'city_page': "City Page",
         'restaurant_details': "Restaurant Details",
         'link_source_code': "Source code on GitHub",
-        'back_to_toc': "Back to Table of Contents",
+        'back_to_top': "Scroll to top",
         'no_filter': "Do not filter",
         'use_filter': "Show only special deals",
         'in_german': "Auf Deutsch"
