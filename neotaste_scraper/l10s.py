@@ -18,6 +18,8 @@ localized_strings = {
         'back_to_top': "Nach oben scrollen",
         'no_filter': "Nicht filtern",
         'use_filter': "Nur spezielle anzeigen",
+        'detail_collapse_all': 'Alle zuklappen',
+        'detail_expand_all': 'Alle aufklappen',
         'in_english': "In English"
     },
     'en': {
@@ -36,6 +38,8 @@ localized_strings = {
         'back_to_top': "Scroll to top",
         'no_filter': "Do not filter",
         'use_filter': "Show only special deals",
+        'detail_collapse_all': 'Collapse all',
+        'detail_expand_all': 'Expand all',
         'in_german': "Auf Deutsch"
     }
 }

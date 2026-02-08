@@ -65,6 +65,12 @@
         <h1>{{ title }}</h1>
         <nav>
             <h2 id="toc">{{ strings['table_of_contents'] }}</h2>
+
+            <button type="button" id="collapse-toggle" data-opposite-state-text="{{ strings['detail_expand_all'] }}">{{ strings['detail_collapse_all'] }}</button>
+            <noscript>
+                <strong>Attention:</strong> This button does not work without JavaScript. Enable JS in your browser to use it.
+            </noscript>
+
             <ul>
                 {% for city, city_deals in cities_data.items() %}
                     <li><a href="#{{ city }}">{{ city.capitalize() }}</a><span style="color: var(--text-muted)"> ({{ city_deals|length }}&nbsp;{{ strings['restaurants'] }}</span>)</li>
@@ -180,5 +186,28 @@
             updateHashLinks();
         </script>
     {% endif %}
+
+
+    <script>
+        // collapse button JS
+        const button = document.getElementById("collapse-toggle");
+        const allDetails = document.querySelectorAll('details');
+
+        // by default all details are opened as per their HTML
+        let detailsAreOpened = true;
+
+        button.addEventListener("click", (event) => {
+            event.preventDefault();
+
+            allDetails.forEach(detailElement => detailElement.open = !detailsAreOpened)
+
+            // toggle UI/state
+            detailsAreOpened = !detailsAreOpened;
+            const newOppositeText = button.innerText;
+            button.innerText = button.dataset.oppositeStateText;
+            button.dataset.oppositeStateText = newOppositeText;
+        });
+        
+    </script>
 </body>
 </html>
