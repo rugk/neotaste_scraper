@@ -9,7 +9,7 @@ import random
 from typing import Any, Dict, List
 import requests
 
-from neotaste_scraper.constants import BASE_URL
+from neotaste_scraper.constants import BASE_URL, Deal
 
 API_BASE = "https://api.neotaste.com"
 
@@ -148,10 +148,14 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
             deals = []
             for d in obj.get("deals", []) or []:
                 if isinstance(d, dict) and d.get("status") == "available":
-                    dn = d.get("name") or ""
-                    dn = dn.strip()
-                    if dn:
-                        deals.append(dn)
+                    dealName = d.get("name") or ""
+                    dealName = dealName.strip()
+                    if dealName:
+                        deals.append(Deal(
+                            text=dealName,
+                            component="api",
+                            deal_type="flash+event" if d.get("eventDeal", False) else None
+                        ))
 
             if deals:
                 found[slug] = {

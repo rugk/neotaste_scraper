@@ -55,10 +55,45 @@ def test_fetch_restaurants_paginates_and_extracts_deals():
     slugs = {r["link"].split("/")[-1] for r in results}
     assert slugs == {"a", "b", "c"}
     # Check deals presence
-    assert any("D1" in r.get("deals", []) for r in results)
-    assert any("D2" in r.get("deals", []) for r in results)
-    assert any("D3" in r.get("deals", []) for r in results)
+    assert any("D1" in [d.text for d in r.get("deals", [])] for r in results)
+    assert any("D2" in [d.text for d in r.get("deals", [])] for r in results)
+    assert any("D3" in [d.text for d in r.get("deals", [])] for r in results)
 
+
+def test_fetch_restaurants_classifs_event_deals():
+    """Test pagination and deal extraction with mocked responses."""
+    # page 1: two restaurants, not last
+    event_deal = {"name": "event-deal", "status": "available", "eventDeal": True}
+    non_event_deal = {"name": "non-event-deal", "status": "available", "eventDeal": False}
+    deal_with_unknown_state = {"name": "deal_with_unknown_state", "status": "available"}
+    page1 = {
+        "data": [
+            {"slug": "a", "name": "A", "citySlug": "berlin", "deals": [event_deal]},
+            {"slug": "b", "name": "B", "citySlug": "berlin", "deals": [non_event_deal]},
+            {"slug": "c", "name": "C", "citySlug": "berlin", "deals": [deal_with_unknown_state]}
+        ],
+        "meta": {"page": 1, "isLastPage": True}
+    }
+
+    def fake_get(url, timeout=10, headers=None):  # pylint: disable=unused-argument # (required by requests.get signature)
+        if "page=1" in url:
+            return DummyResp(page1)
+        return DummyResp({"data": [], "meta": {"isLastPage": True}})
+
+    with patch("neotaste_scraper.api_client.requests.get", side_effect=fake_get):
+        results = fetch_restaurants_from_api("berlin", lang="de")
+
+    # Expect restaurants extracted
+    slugs = {r["link"].split("/")[-1] for r in results}
+    assert slugs == {"a", "b", "c"}
+    # Check deals presence
+    assert any(event_deal["name"] in [d.text for d in r.get("deals", [])] for r in results)
+    assert any(non_event_deal["name"] in [d.text for d in r.get("deals", [])] for r in results)
+    assert any(deal_with_unknown_state["name"] in [d.text for d in r.get("deals", [])] for r in results)
+    # event deal is marked as such
+    assert any(d.deal_type == "flash+event" for d in [d for r in results for d in r.get("deals", []) if d.text == event_deal["name"]])
+    assert all(d.deal_type is None for d in [d for r in results for d in r.get("deals", []) if d.text == non_event_deal["name"]])
+    assert all(d.deal_type is None for d in [d for r in results for d in r.get("deals", []) if d.text == deal_with_unknown_state["name"]])
 
 def test_fetch_restaurants_with_api_fixture():
     """Test with real API response fixture (api-response-page.json)."""

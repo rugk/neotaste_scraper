@@ -88,8 +88,8 @@ def main() -> None:
         # Fetch and print deals for a specific city
         print(f"Fetching deals for city: {args.city}...")
         verbosity = [Verbosity.SILENT, Verbosity.NORMAL, Verbosity.DEBUG][min(args.verbose, 2)]
-        deals = fetch_deals_from_city(args.city, filter_mode, args.lang, verbosity=verbosity)
-        cities_data[args.city] = deals
+        deals_in_restaurants = fetch_deals_from_city(args.city, filter_mode, args.lang, verbosity=verbosity)
+        cities_data[args.city] = deals_in_restaurants
     elif args.all:
         # Fetch and print deals for all cities
         print("Fetching deals for all cities...")

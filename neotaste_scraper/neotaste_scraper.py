@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from neotaste_scraper.constants import BASE_URL, Deal, Verbosity
-from neotaste_scraper.helper import get_city_url, get_slug_from_link
+from neotaste_scraper.helper import filter_deals, get_city_url, get_slug_from_link
 from . import api_client
 
 def extract_deals_from_card(card: Tag,
@@ -67,21 +67,6 @@ def extract_deals_from_card(card: Tag,
             dtype = 'other'
         return Deal(text=txt, component=comp, deal_type=dtype)
 
-    def _filter_deals(deals_in: List[Deal], mode: Optional[str]) -> List[Deal]:
-        if mode == 'events':
-            return [
-                d for d in deals_in
-                if d.deal_type in ('event', 'flash+event')
-            ]
-        if mode == 'flash':
-            return [
-                d for d in deals_in
-                if d.deal_type in ('flash', 'flash+event')
-            ]
-        if mode == 'special':
-            return [d for d in deals_in if d.deal_type != 'other']
-        return deals_in
-
     # assemble outputs using small helpers
     link = _get_link(card)
     if not link:
@@ -97,7 +82,7 @@ def extract_deals_from_card(card: Tag,
         if item is not None:
             parsed_deals.append(item)
 
-    parsed_deals = _filter_deals(parsed_deals, filter_mode)
+    parsed_deals = filter_deals(parsed_deals, filter_mode)
     results = [d.text for d in parsed_deals]
     if not results:
         return None
@@ -126,7 +111,7 @@ def fetch_deals_from_city(city_slug: str,
         return []
 
     # Try JSON API first — it provides full pagination and more results
-    results_by_slug, sources_summary = fetch_api(city_slug, lang, verbosity, url)
+    results_by_slug, sources_summary = fetch_api(city_slug, lang, verbosity, filter_mode)
 
     soup = BeautifulSoup(html, "html.parser")
 
@@ -161,7 +146,10 @@ def parse_html(filter_mode, verbosity, results_by_slug, sources_summary, soup):
         )
 
 
-def fetch_api(city_slug, lang, verbosity, url):
+def fetch_api(city_slug,
+              lang,
+              verbosity, 
+              filter_mode: Optional[str] = None):
     """Fetch restaurant data from the NeoTaste JSON API with pagination."""
     try:
         api_results = api_client.fetch_restaurants_from_api(
@@ -176,21 +164,29 @@ def fetch_api(city_slug, lang, verbosity, url):
 
     if api_results:
         added_api = 0
-        for obj in api_results:
+        for restaurant in api_results:
             # obj already contains link and restaurant/deals
-            link = obj.get('link')
+            link = restaurant.get('link')
             if not link:
                 continue
             slug = link.split('/')[-1]
             if slug and slug not in results_by_slug:
-                results_by_slug[slug] = obj
+                # If filter_mode is set, only include restaurants with matching deals
+                filtered_deals = filter_deals(restaurant.get('deals', []), filter_mode)
+                restaurant['deals'] = filtered_deals
+                results_by_slug[slug] = restaurant
                 added_api += 1
+
+            # remove empty entries if filter_mode filters out all deals
+            if slug in results_by_slug and not results_by_slug[slug]['deals']:
+                del results_by_slug[slug]
+
         sources_summary.append(f"API: {added_api}")
         if verbosity.value > Verbosity.SILENT.value:
             print(f"[neotaste_scraper] API client added {added_api} restaurants", file=sys.stderr)
 
     if verbosity.value > Verbosity.SILENT.value:
-        print(f"[neotaste_scraper] Fetching {url}", file=sys.stderr)
+        print(f"[neotaste_scraper] Fetching {city_slug}", file=sys.stderr)
     return results_by_slug, sources_summary
 
 
