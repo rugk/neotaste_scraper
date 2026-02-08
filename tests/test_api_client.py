@@ -91,9 +91,15 @@ def test_fetch_restaurants_classifs_event_deals():
     assert any(non_event_deal["name"] in [d.text for d in r.get("deals", [])] for r in results)
     assert any(deal_with_unknown_state["name"] in [d.text for d in r.get("deals", [])] for r in results)
     # event deal is marked as such
-    assert any(d.deal_type == "flash+event" for d in [d for r in results for d in r.get("deals", []) if d.text == event_deal["name"]])
-    assert all(d.deal_type is None for d in [d for r in results for d in r.get("deals", []) if d.text == non_event_deal["name"]])
-    assert all(d.deal_type is None for d in [d for r in results for d in r.get("deals", []) if d.text == deal_with_unknown_state["name"]])
+    assert any(d.deal_type == "flash+event" for d in
+               [d for r in results for d in r.get("deals", [])
+                if d.text == event_deal["name"]])
+    assert all(d.deal_type is None for d in
+               [d for r in results for d in r.get("deals", [])
+                if d.text == non_event_deal["name"]])
+    assert all(d.deal_type is None for d in
+               [d for r in results for d in r.get("deals", [])
+                if d.text == deal_with_unknown_state["name"]])
 
 def test_fetch_restaurants_with_api_fixture():
     """Test with real API response fixture (api-response-page.json)."""

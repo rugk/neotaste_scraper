@@ -148,7 +148,7 @@ def parse_html(filter_mode, verbosity, results_by_slug, sources_summary, soup):
 
 def fetch_api(city_slug,
               lang,
-              verbosity, 
+              verbosity,
               filter_mode: Optional[str] = None):
     """Fetch restaurant data from the NeoTaste JSON API with pagination."""
     try:

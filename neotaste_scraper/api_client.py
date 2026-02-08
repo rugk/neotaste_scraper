@@ -148,11 +148,11 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
             deals = []
             for d in obj.get("deals", []) or []:
                 if isinstance(d, dict) and d.get("status") == "available":
-                    dealName = d.get("name") or ""
-                    dealName = dealName.strip()
-                    if dealName:
+                    deal_name = d.get("name") or ""
+                    deal_name = deal_name.strip()
+                    if deal_name:
                         deals.append(Deal(
-                            text=dealName,
+                            text=deal_name,
                             component="api",
                             deal_type="flash+event" if d.get("eventDeal", False) else None
                         ))
