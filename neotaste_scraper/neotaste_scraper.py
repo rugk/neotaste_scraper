@@ -7,27 +7,14 @@ different formats: text, JSON, or HTML.
 """
 
 from typing import Any, Dict, List, Optional
-from dataclasses import dataclass
+import sys
 import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-# Constants
-BASE_URL = "https://neotaste.com"
-
-
-def get_city_url(city_slug: str, lang: str = "de") -> str:
-    """Construct full URL for the given city with the specified language."""
-    return f"{BASE_URL}/{lang}/restaurants/{city_slug}"
-
-
-@dataclass
-class Deal:
-    """A parsed deal from a restaurant card."""
-    text: str
-    component: str
-    deal_type: str  # 'flash', 'event', 'flash+event', 'other'
-
+from neotaste_scraper.constants import BASE_URL, Deal, Verbosity
+from neotaste_scraper.helper import filter_deals, get_city_url, get_slug_from_link
+from . import api_client
 
 def extract_deals_from_card(card: Tag,
                             filter_mode: Optional[str] = None
@@ -80,15 +67,6 @@ def extract_deals_from_card(card: Tag,
             dtype = 'other'
         return Deal(text=txt, component=comp, deal_type=dtype)
 
-    def _filter_deals(deals_in: List[Deal], mode: Optional[str]) -> List[Deal]:
-        if mode == 'events':
-            return [d for d in deals_in if d.deal_type in ('event', 'flash+event')]
-        if mode == 'flash':
-            return [d for d in deals_in if d.deal_type in ('flash', 'flash+event')]
-        if mode == 'special':
-            return [d for d in deals_in if d.deal_type != 'other']
-        return deals_in
-
     # assemble outputs using small helpers
     link = _get_link(card)
     if not link:
@@ -104,7 +82,7 @@ def extract_deals_from_card(card: Tag,
         if item is not None:
             parsed_deals.append(item)
 
-    parsed_deals = _filter_deals(parsed_deals, filter_mode)
+    parsed_deals = filter_deals(parsed_deals, filter_mode)
     results = [d.text for d in parsed_deals]
     if not results:
         return None
@@ -113,9 +91,15 @@ def extract_deals_from_card(card: Tag,
 
 def fetch_deals_from_city(city_slug: str,
                           filter_mode: Optional[str] = None,
-                          lang: str = "de") -> List[Dict[str, Any]]:
+                          lang: str = "de",
+                          verbosity: Verbosity = Verbosity.SILENT) -> List[Dict[str, Any]]:
     """Scrape deals from a specific city and optionally filter deals.
 
+    Attempts a best-effort to retrieve the fully rendered restaurant list by:
+    1) Fetching the HTML and parsing server-side rendered cards
+    2) Fetching the JSON API (which provides more results and pagination)
+
+    Deduplicates by link and applies filter_mode at the end.
     filter_mode may be None or one of 'events','flash','special'.
     """
 
@@ -126,19 +110,86 @@ def fetch_deals_from_city(city_slug: str,
         print(f"Error fetching {url}: {e}")
         return []
 
+    # Try JSON API first — it provides full pagination and more results
+    results_by_slug, sources_summary = fetch_api(city_slug, lang, verbosity, filter_mode)
+
     soup = BeautifulSoup(html, "html.parser")
-    results = []
 
-    # Each restaurant card is an <a> with a restaurant link
+    # 1) Parse server-side HTML cards
+    parse_html(filter_mode, verbosity, results_by_slug, sources_summary, soup)
+
+    # Return deduplicated results
+    results = list(results_by_slug.values())
+
+    print(f"[neotaste_scraper] Final: {len(results)} restaurants from "
+          f"{''.join(sources_summary) if sources_summary else 'no sources'} "
+          f"for {city_slug}", file=sys.stderr)
+    return results
+
+def parse_html(filter_mode, verbosity, results_by_slug, sources_summary, soup):
+    """Parse the HTML for restaurant cards and extract deals, applying filters."""
     cards = soup.select("a[href*='/restaurants/']")
-
+    html_count = 0
     for card in cards:
-        # Support legacy callers passing filter_events keyword by letting extract handle it
         result = extract_deals_from_card(card, filter_mode)
         if result:
-            results.append(result)
+            slug = get_slug_from_link(result['link'])
+            if slug:
+                results_by_slug[slug] = result
+                html_count += 1
+    if html_count > 0:
+        sources_summary.append(f"HTML: {html_count}")
+    if verbosity.value > Verbosity.SILENT.value:
+        print(
+            f"[neotaste_scraper] HTML parsing found {html_count} restaurants",
+            file=sys.stderr
+        )
 
-    return results
+
+def fetch_api(city_slug,
+              lang,
+              verbosity,
+              filter_mode: Optional[str] = None):
+    """Fetch restaurant data from the NeoTaste JSON API with pagination."""
+    try:
+        api_results = api_client.fetch_restaurants_from_api(
+            city_slug,
+            lang=lang,
+            verbosity=verbosity.value)
+    except Exception:  # pylint: disable=broad-except
+        api_results = []
+
+    results_by_slug: Dict[str, Dict[str, Any]] = {}
+    sources_summary = []
+
+    if api_results:
+        added_api = 0
+        for restaurant in api_results:
+            # obj already contains link and restaurant/deals
+            link = restaurant.get('link')
+            if not link:
+                continue
+            slug = link.split('/')[-1]
+            if slug and slug not in results_by_slug:
+                # If filter_mode is set, only include restaurants with matching deals
+                filtered_deals = filter_deals(restaurant.get('deals', []), filter_mode)
+                results = [d.text for d in filtered_deals]
+                restaurant['deals'] = results
+                results_by_slug[slug] = restaurant
+
+            # remove empty entries if filter_mode filters out all deals
+            if slug in results_by_slug and not results_by_slug[slug]['deals']:
+                del results_by_slug[slug]
+            else:
+                added_api += 1
+
+        sources_summary.append(f"API: {added_api}")
+        if verbosity.value > Verbosity.SILENT.value:
+            print(f"[neotaste_scraper] API client added {added_api} restaurants", file=sys.stderr)
+
+    if verbosity.value > Verbosity.SILENT.value:
+        print(f"[neotaste_scraper] Fetching {city_slug}", file=sys.stderr)
+    return results_by_slug, sources_summary
 
 
 def fetch_all_cities(lang: str = "de") -> List[Dict[str, str]]:

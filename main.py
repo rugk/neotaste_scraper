@@ -8,6 +8,7 @@ different formats: text, JSON, or HTML.
 """
 import argparse
 
+from neotaste_scraper.constants import Verbosity
 from neotaste_scraper.data_output import (
     print_deals,
     output_json,
@@ -58,6 +59,10 @@ def main() -> None:
         "-l", "--lang", type=str, choices=["de", "en"], default="de",
         help="Language (default: de)"
     )
+    parser.add_argument(
+        "-v", "--verbose", action="count", default=0,
+        help="Verbosity level: -v for normal, -vv for debug"
+    )
 
     # Parse the arguments
     args = parser.parse_args()
@@ -82,16 +87,18 @@ def main() -> None:
     if args.city:
         # Fetch and print deals for a specific city
         print(f"Fetching deals for city: {args.city}...")
-        deals = fetch_deals_from_city(args.city, filter_mode, args.lang)
-        cities_data[args.city] = deals
+        verbosity = [Verbosity.SILENT, Verbosity.NORMAL, Verbosity.DEBUG][min(args.verbose, 2)]
+        deals_in_restaurants = fetch_deals_from_city(args.city, filter_mode, args.lang, verbosity=verbosity)
+        cities_data[args.city] = deals_in_restaurants
     elif args.all:
         # Fetch and print deals for all cities
         print("Fetching deals for all cities...")
+        verbosity = [Verbosity.SILENT, Verbosity.NORMAL, Verbosity.DEBUG][min(args.verbose, 2)]
         cities = fetch_all_cities(args.lang)
         for city in cities:
             print(f"Fetching deals for city: {city['slug']}...")
             city_deals = fetch_deals_from_city(
-                city['slug'], filter_mode, args.lang)
+                city['slug'], filter_mode, args.lang, verbosity=verbosity)
             cities_data[city['slug']] = city_deals
 
     if not cities_data:

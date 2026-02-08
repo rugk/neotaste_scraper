@@ -105,10 +105,12 @@ def test_fetch_all_cities(mock_get, html_file):
 def test_print_deals(mock_print):
     """Test print_deals function (print check)"""
     cities_data = {
-        "sample-city": [{"restaurant": "Sample Restaurant", "deals": ["🌟 €5 Off"], "link": "http://link.com"}]
+        "sample-city": [{"restaurant": "Sample Restaurant",
+                         "deals": ["🌟 €5 Off"],
+                         "link": "http://link.com"}]
     }
     print_deals(cities_data, lang="en")
-    mock_print.assert_any_call("\nDeals in Sample-city:")
+    mock_print.assert_any_call("\nDeals in Sample-city: (1 restaurants)")
     mock_print.assert_any_call("  Sample Restaurant")
     mock_print.assert_any_call("   - 🌟 €5 Off")
     mock_print.assert_any_call("   → http://link.com")
