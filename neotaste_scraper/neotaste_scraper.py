@@ -173,7 +173,8 @@ def fetch_api(city_slug,
             if slug and slug not in results_by_slug:
                 # If filter_mode is set, only include restaurants with matching deals
                 filtered_deals = filter_deals(restaurant.get('deals', []), filter_mode)
-                restaurant['deals'] = filtered_deals
+                results = [d.text for d in filtered_deals]
+                restaurant['deals'] = results
                 results_by_slug[slug] = restaurant
 
             # remove empty entries if filter_mode filters out all deals
