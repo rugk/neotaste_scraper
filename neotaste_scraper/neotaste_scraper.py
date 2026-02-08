@@ -6,41 +6,15 @@ You can filter and retrieve restaurant deals, including
 different formats: text, JSON, or HTML.
 """
 
-from enum import Enum
 from typing import Any, Dict, List, Optional
-from dataclasses import dataclass
 import sys
-import json
 import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-import njsparser
+
+from neotaste_scraper.constants import BASE_URL, Deal, Verbosity
+from neotaste_scraper.helper import get_city_url, get_slug_from_link
 from . import api_client
-
-
-class Verbosity(Enum):
-    """Verbosity levels for debug output."""
-    SILENT = 0
-    NORMAL = 1  # -v: chunk summaries and limited previews
-    DEBUG = 2   # -vv: full JSON dumps for all chunks
-
-
-# Constants
-BASE_URL = "https://neotaste.com"
-
-
-def get_city_url(city_slug: str, lang: str = "de") -> str:
-    """Construct full URL for the given city with the specified language."""
-    return f"{BASE_URL}/{lang}/restaurants/{city_slug}"
-
-
-@dataclass
-class Deal:
-    """A parsed deal from a restaurant card."""
-    text: str
-    component: str
-    deal_type: str  # 'flash', 'event', 'flash+event', 'other'
-
 
 def extract_deals_from_card(card: Tag,
                             filter_mode: Optional[str] = None
@@ -129,210 +103,6 @@ def extract_deals_from_card(card: Tag,
         return None
     return {"restaurant": name, "deals": results, "link": link}
 
-# Prefer njsparser for parsing Next.js flight data. This scraper relies on it.
-try:
-    NJS_AVAILABLE = True
-except ImportError:
-    njsparser = None  # type: ignore
-    NJS_AVAILABLE = False
-
-
-def _extract_anchors_from_text(text: str) -> List[Tag]:
-    """Given a string (possibly JSON with HTML or plain HTML), try to parse and return
-    a list of <a> Tag elements that point to restaurant pages.
-    Tries JSON parsing first to avoid spurious BeautifulSoup warnings."""
-    # Try JSON parsing first to avoid BeautifulSoup MarkupResemblesLocatorWarning
-    try:
-        data = json.loads(text)
-        text = json.dumps(data, ensure_ascii=False)
-    except (json.JSONDecodeError, ValueError):
-        # Not JSON, proceed with raw text
-        pass
-    
-    # Now try HTML parsing
-    try:
-        soup = BeautifulSoup(text, 'html.parser')
-        anchors = soup.select("a[href*='/restaurants/']")
-        return anchors
-    except Exception:
-        return []
-
-
-def _extract_anchors_from_flight_data(html: str, verbosity: Verbosity = Verbosity.SILENT) -> List[Tag]:
-    """Use njsparser to parse Next.js flight data and extract restaurant anchors.
-    
-    Navigates the known flight-data structure: state.queries[].state.data.pages[].data[]
-    which contains restaurant objects with link information.
-    """
-    if not NJS_AVAILABLE:
-        if verbosity.value > Verbosity.SILENT.value:
-            print("[neotaste_scraper] njsparser not installed; pip install njsparser", file=sys.stderr)
-        return []
-
-    try:
-        fd = njsparser.BeautifulFD(html)
-    except (AttributeError, TypeError, ValueError):
-        if verbosity.value > Verbosity.SILENT.value:
-            print("[neotaste_scraper] njsparser.BeautifulFD failed to parse page HTML", file=sys.stderr)
-        return []
-
-    anchors: List[Tag] = []
-
-    def _search_for_restaurants(obj: Any, depth: int = 0) -> None:
-        """Search for restaurant objects and HTML fragments in nested structures."""
-        if depth > 30 or obj is None:
-            return
-        
-        try:
-            if isinstance(obj, dict):
-                # Check for restaurant objects with slug/name
-                if 'slug' in obj and 'name' in obj:
-                    slug = obj.get('slug')
-                    if isinstance(slug, str) and slug and '/' not in slug and len(slug) < 100:
-                        link_text = f'<a href="/restaurants/{slug}">{obj.get("name", "")}</a>'
-                        found = _extract_anchors_from_text(link_text)
-                        anchors.extend(found)
-                
-                # Recurse into dict values
-                for v in obj.values():
-                    _search_for_restaurants(v, depth + 1)
-            
-            elif isinstance(obj, (list, tuple)):
-                for item in obj:
-                    _search_for_restaurants(item, depth + 1)
-            
-            elif isinstance(obj, str):
-                # Also try to extract HTML from strings containing restaurant links
-                if '/restaurants/' in obj:
-                    found = _extract_anchors_from_text(obj)
-                    anchors.extend(found)
-        except Exception:
-            pass
-
-    # Parse through all chunks
-    total_chunks = 0
-    for data in fd.find_iter([njsparser.T.Data, njsparser.T.Element]):
-        total_chunks += 1
-        content = getattr(data, 'content', None) or getattr(data, 'value', None)
-        
-        if verbosity.value > Verbosity.SILENT.value:
-            try:
-                idx = getattr(data, 'index', '?')
-                typ = type(data).__name__
-                print(f"[neotaste_scraper] chunk #{total_chunks} type={typ} idx={idx}", file=sys.stderr)
-            except Exception:
-                pass
-        
-        _search_for_restaurants(content)
-
-    if verbosity.value > Verbosity.SILENT.value:
-        print(f"[neotaste_scraper] njsparser found {total_chunks} chunks, extracted {len(anchors)} anchors", file=sys.stderr)
-    
-    return anchors
-
-
-def _extract_structured_restaurants_from_flight_data(
-    html: str,
-    city_slug: str,
-    lang: str = 'de',
-    verbosity: Verbosity = Verbosity.SILENT
-) -> List[Dict[str, Any]]:
-    """Parse flight-data with njsparser and extract structured restaurant
-    records + deals.
-    
-    Navigates the known structure: state.queries[].state.data.pages[].data[]
-    Returns a list of dicts: {"restaurant": name, "deals": [deal_names],
-    "link": url}
-    """
-    fd = njsparser.BeautifulFD(html)
-
-    found: Dict[str, Dict[str, Any]] = {}  # key is slug to avoid duplicates
-
-    def _extract_deals_from_list(deals_obj: Any) -> List[str]:
-        """Extract deal names from a deals list, filtering by status='available'."""
-        if not isinstance(deals_obj, (list, tuple)):
-            return []
-        
-        deals_out = []
-        for deal in deals_obj:
-            if isinstance(deal, dict):
-                name = deal.get('name', '').strip() if deal.get('name') else ''
-                # Only include available deals
-                if name and deal.get('status') == 'available':
-                    deals_out.append(name)
-        return deals_out
-
-    def _is_valid_restaurant(obj: Any, target_city: str) -> bool:
-        """Check if obj is a valid restaurant record."""
-        if not isinstance(obj, dict):
-            return False
-        # Must be in the target city
-        if obj.get('citySlug') != target_city:
-            return False
-        # Must have slug, name, and location or images
-        slug = obj.get('slug')
-        name = obj.get('name')
-        if not (isinstance(slug, str) and isinstance(name, str) and slug and name):
-            return False
-        if '/' in slug or len(slug) > 100:
-            return False
-        # Must have location or images to be a real restaurant
-        has_location = obj.get('latitude') is not None or obj.get('longitude') is not None
-        has_images = isinstance(obj.get('images'), (list, tuple)) and len(obj.get('images', [])) > 0
-        return has_location or has_images
-
-    def _search_restaurants(obj: Any, depth: int = 0) -> None:
-        """Search through nested structures for restaurant objects.
-        Also navigates the known structure state.queries[].state.data.pages[].data[]
-        """
-        if depth > 30 or obj is None:
-            return
-        
-        try:
-            if isinstance(obj, dict):
-                # Check if this looks like a restaurant object
-                if _is_valid_restaurant(obj, city_slug):
-                    slug = obj['slug']
-                    if slug not in found:
-                        link = f"{BASE_URL}/{lang}/restaurants/{slug}"
-                        deals = _extract_deals_from_list(obj.get('deals', []))
-                        found[slug] = {
-                            "restaurant": obj['name'],
-                            "deals": deals,
-                            "link": link
-                        }
-                        if verbosity.value > Verbosity.NORMAL.value:
-                            print(
-                                f"[neotaste_scraper] found restaurant: "
-                                f"{obj['name']} ({len(deals)} deals)",
-                                file=sys.stderr
-                            )
-                
-                # Recurse into nested structures
-                for v in obj.values():
-                    _search_restaurants(v, depth + 1)
-            
-            elif isinstance(obj, (list, tuple)):
-                for item in obj:
-                    _search_restaurants(item, depth + 1)
-        except Exception:
-            pass
-
-    # Parse through all flight data chunks
-    total_chunks = 0
-    for data in fd.find_iter([njsparser.T.Data, njsparser.T.Element]):
-        total_chunks += 1
-        content = getattr(data, 'content', None) or getattr(data, 'value', None)
-        # if verbosity.value > Verbosity.SILENT.value:
-        content_as_string = json.dumps(content, indent=2)
-        _search_restaurants(content)
-
-    if verbosity.value > Verbosity.SILENT.value:
-        print(f"[neotaste_scraper] structured extractor found {len(found)} restaurants with deals from {total_chunks} chunks", file=sys.stderr)
-
-    return list(found.values())
-
-
 def fetch_deals_from_city(city_slug: str,
                           filter_mode: Optional[str] = None,
                           lang: str = "de",
@@ -340,10 +110,8 @@ def fetch_deals_from_city(city_slug: str,
     """Scrape deals from a specific city and optionally filter deals.
 
     Attempts a best-effort to retrieve the fully rendered restaurant list by:
-    1) Parsing the initial page HTML (server-side rendered elements)
-    2) Using `njsparser` to extract structured restaurant objects with deals from flight-data
-    3) Using njsparser to extract HTML anchors from flight-data
-    4) Optionally using `njsparser` rendering helpers as a last-resort fallback
+    1) Fetching the HTML and parsing server-side rendered cards
+    2) Fetching the JSON API (which provides more results and pagination)
 
     Deduplicates by link and applies filter_mode at the end.
     filter_mode may be None or one of 'events','flash','special'.
@@ -385,15 +153,6 @@ def fetch_deals_from_city(city_slug: str,
 
     soup = BeautifulSoup(html, "html.parser")
 
-    # Helper: extract slug from a URL (last path component)
-    def get_slug_from_link(link: str) -> Optional[str]:
-        """Extract restaurant slug from URL."""
-        if not link:
-            return None
-        # Remove protocol and domain, get the last path component
-        path = link.split('/')[-1]
-        return path if path else None
-
     # 1) Parse server-side HTML cards
     cards = soup.select("a[href*='/restaurants/']")
     html_count = 0
@@ -411,52 +170,6 @@ def fetch_deals_from_city(city_slug: str,
             f"[neotaste_scraper] HTML parsing found {html_count} restaurants",
             file=sys.stderr
         )
-
-    # 2) Extract structured restaurant objects from flight-data (has deals)
-    structured = _extract_structured_restaurants_from_flight_data(
-        html, city_slug=city_slug, lang=lang, verbosity=verbosity
-    )
-    added_structured = 0
-    if structured:
-        for obj in structured:
-            slug = get_slug_from_link(obj['link'])
-            if slug and slug not in results_by_slug:
-                results_by_slug[slug] = obj
-                added_structured += 1
-        if added_structured > 0:
-            sources_summary.append(f"Flight-data: {added_structured}")
-        if verbosity.value > Verbosity.SILENT.value:
-            print(
-                f"[neotaste_scraper] Flight-data extractor added {added_structured}/"
-                f"{len(structured)} new restaurants",
-                file=sys.stderr
-            )
-
-    # 3) Try HTML anchor extraction from flight-data
-    anchors_fd = _extract_anchors_from_flight_data(html, verbosity=verbosity)
-    added_anchors = 0
-    if anchors_fd:
-        for a in anchors_fd:
-            link = a.get('href')
-            if not link:
-                continue
-            full_link = (
-                link if link.startswith('http') else BASE_URL + link
-            )
-            slug = get_slug_from_link(full_link)
-            if slug and slug not in results_by_slug:
-                parsed = extract_deals_from_card(a, filter_mode)
-                if parsed:
-                    results_by_slug[slug] = parsed
-                    added_anchors += 1
-        if added_anchors > 0:
-            sources_summary.append(f"Anchors: {added_anchors}")
-        if verbosity.value > Verbosity.SILENT.value:
-            print(
-                f"[neotaste_scraper] Anchor extractor added {added_anchors}/"
-                f"{len(anchors_fd)} new restaurants",
-                file=sys.stderr
-            )
 
     # Return deduplicated results
     results = list(results_by_slug.values())

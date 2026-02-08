@@ -8,6 +8,7 @@ different formats: text, JSON, or HTML.
 """
 import argparse
 
+from neotaste_scraper.constants import Verbosity
 from neotaste_scraper.data_output import (
     print_deals,
     output_json,
@@ -17,7 +18,6 @@ from neotaste_scraper.data_output import (
 from neotaste_scraper.neotaste_scraper import (
     fetch_deals_from_city,
     fetch_all_cities,
-    Verbosity,
 )
 
 

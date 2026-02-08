@@ -81,57 +81,6 @@ def test_fetch_deals_from_city(mock_get, html_file):
     assert "🌟 €5 Wild Bert with Betel 🌟" in result[0]['deals']
     assert "2for1 Aperitif" in result[0]['deals']
 
-
-
-
-def test_fetch_deals_from_city_with_njsparser(monkeypatch, capsys):
-    """If Next.js JSON path doesn't provide the full list, try optional njsparser module.
-
-    This test mocks the njsparser.BeautifulFD flight-data parser to return chunked data
-    that contains HTML fragments with restaurant <a> elements and checks debug logs."""
-    # Page returns minimal HTML w/o anchors
-    mock_response_page = MagicMock()
-    mock_response_page.text = "<html><head><script src='/_next/static/chunks/app/%5Blocale%5D/restaurants/%5BcitySlug%5D/page-abc123.js'></script></head><body></body></html>"
-
-    # Mock requests.get to return the minimal page
-    def fake_get(*args, **kwargs):
-        return mock_response_page
-    monkeypatch.setattr('neotaste_scraper.neotaste_scraper.requests.get', fake_get)
-    monkeypatch.setattr('neotaste_scraper.api_client.requests.get', fake_get)
-
-    # Mock API client to return empty (so njsparser extraction is needed)
-    monkeypatch.setattr('neotaste_scraper.neotaste_scraper.api_client.fetch_restaurants_from_api', lambda *a, **k: [])
-
-    # Create a fake njsparser with BeautifulFD that yields Data-like objects
-    import sys, types
-    class FakeData:
-        def __init__(self, content):
-            self.content = content
-    class FakeFD:
-        def __init__(self, html):
-            self.html = html
-        def find_iter(self, types_list):
-            # Yield one Data object whose content contains an HTML anchor
-            yield FakeData('<a href="/de/restaurants/sample-city/y"><h4>Y</h4><div data-sentry-component="RestaurantCardDeals"><div data-sentry-component="DealPreview">Deal Y</div></div></a>')
-
-    fake_mod = types.SimpleNamespace(BeautifulFD=FakeFD, T=types.SimpleNamespace(Data='Data', Element='Element'))
-    
-    # Patch njsparser in the module that imports it
-    import neotaste_scraper.neotaste_scraper as ns
-    monkeypatch.setattr(ns, 'njsparser', fake_mod)
-    monkeypatch.setattr(ns, 'NJS_AVAILABLE', True)
-
-    result = fetch_deals_from_city("sample-city", filter_mode=None, verbosity=ns.Verbosity.NORMAL)
-
-    # Capture stderr logs
-    captured = capsys.readouterr()
-    assert "Anchors:" in captured.err or "Deal Y" in str(result)
-
-    names = {r['restaurant'] for r in result}
-    assert 'Y' in names
-    assert any('Deal Y' in d for r in result for d in r['deals'])
-
-
 @pytest.mark.parametrize("html_file", [
     'tests/html_snippets/restaurant-overview-all-cities-simplified.html',
     'tests/html_snippets/restaurant-overview-all-cities.html'
@@ -149,27 +98,6 @@ def test_fetch_all_cities(mock_get, html_file):
     assert len(cities) >= 1
     assert cities[0]['name'] == "Sample City"
     assert cities[0]['slug'] == "sample-city"
-
-
-def test_missing_njsparser_shows_warning(monkeypatch, capsys):
-    """When njsparser is not available, a helpful stderr message should be shown."""
-    # Force module-level flag to indicate njsparser is not available
-    import neotaste_scraper.neotaste_scraper as ns
-    from neotaste_scraper.neotaste_scraper import Verbosity
-    monkeypatch.setattr(ns, 'NJS_AVAILABLE', False)
-
-    # Make a minimal page (no anchors)
-    mock_response_page = MagicMock()
-    mock_response_page.text = "<html><head></head><body></body></html>"
-    def fake_get(*args, **kwargs):
-        return mock_response_page
-    monkeypatch.setattr('requests.get', fake_get)
-
-    # Call the function
-    _ = fetch_deals_from_city('sample-city', verbosity=Verbosity.NORMAL)
-
-    captured = capsys.readouterr()
-    assert 'njsparser not installed' in captured.err
 
 
 @patch('builtins.print')
