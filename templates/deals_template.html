@@ -150,7 +150,7 @@
 
                     // need to manually trigger the hashchange event, because replaceState
                     // doesn't trigger it by itself
-                    if (updateHashLinks !== undefined) {
+                    if (typeof updateHashLinks !== 'undefined') {
                         updateHashLinks();
                     }
                 });
