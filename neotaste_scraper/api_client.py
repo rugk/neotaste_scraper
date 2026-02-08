@@ -3,13 +3,30 @@
 This module intentionally keeps dependencies minimal to avoid import cycles
 with the main scraper module.
 """
-from typing import Any, Dict, List
-import requests
 import time
 import random
+from typing import Any, Dict, List
+import requests
 
 SITE_BASE_URL = "https://neotaste.com"
 API_BASE = "https://api.neotaste.com"
+
+# Rotating list of real browser User-Agents to avoid 403 blocks
+# (App User-Agents were tested but consistently return 403)
+USER_AGENTS = [
+    # Chrome (latest versions)
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+    # Firefox
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0",
+    # Safari
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15",
+    # Mobile browsers
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
+]
 
 
 def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int = 0) -> List[Dict[str, Any]]:
@@ -23,9 +40,10 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
     found: Dict[str, Dict[str, Any]] = {}
     max_pages = 200
 
-    headers = {
-        "User-Agent": "neotaste_scraper/1.0 (+https://github.com/rugk/neotaste_scraper)"
-    }
+    def _get_random_user_agent() -> str:
+        """Return a random browser or app User-Agent."""
+        return random.choice(USER_AGENTS)
+
     retry_limit = 3
     base_backoff = 1.0
 
@@ -39,6 +57,7 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
         resp = None
         while attempts < retry_limit:
             try:
+                headers = {"User-Agent": _get_random_user_agent()}
                 resp = requests.get(url, timeout=10, headers=headers)
             except Exception:
                 resp = None
@@ -55,6 +74,8 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
                 status = 200
 
             if status == 403:
+                print("[api_client] page response status:", status, ", failed with user agent: ", headers["User-Agent"])
+
                 # Respect Retry-After header when present
                 ra = resp.headers.get('Retry-After') if hasattr(resp, 'headers') else None
                 if ra:
@@ -88,6 +109,9 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
 
         if status != 200:
             break
+
+        if verbosity:
+            print("[api_client] page response status:", status, ", worked with user agent: ", headers["User-Agent"])
 
         try:
             data = resp.json()
@@ -128,9 +152,7 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
                 }
 
         # Determine if we should continue paging
-        is_last = None
-
-        if is_last:
+        if isinstance(meta, dict) and meta.get("isLastPage"):
             break
 
         if not items:

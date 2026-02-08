@@ -427,7 +427,6 @@ def fetch_deals_from_city(city_slug: str,
             )
 
     # 3) Try HTML anchor extraction from flight-data
-    before_anchors = len(results_by_slug)
     anchors_fd = _extract_anchors_from_flight_data(html, verbosity=verbosity)
     if anchors_fd:
         added_anchors = 0

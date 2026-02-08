@@ -93,10 +93,14 @@ def test_fetch_deals_from_city_with_njsparser(monkeypatch, capsys):
     mock_response_page = MagicMock()
     mock_response_page.text = "<html><head><script src='/_next/static/chunks/app/%5Blocale%5D/restaurants/%5BcitySlug%5D/page-abc123.js'></script></head><body></body></html>"
 
-    # We only return the page HTML; the JSON path is removed in current design
+    # Mock requests.get to return the minimal page
     def fake_get(*args, **kwargs):
         return mock_response_page
-    monkeypatch.setattr('requests.get', fake_get)
+    monkeypatch.setattr('neotaste_scraper.neotaste_scraper.requests.get', fake_get)
+    monkeypatch.setattr('neotaste_scraper.api_client.requests.get', fake_get)
+
+    # Mock API client to return empty (so njsparser extraction is needed)
+    monkeypatch.setattr('neotaste_scraper.neotaste_scraper.api_client.fetch_restaurants_from_api', lambda *a, **k: [])
 
     # Create a fake njsparser with BeautifulFD that yields Data-like objects
     import sys, types
@@ -117,7 +121,7 @@ def test_fetch_deals_from_city_with_njsparser(monkeypatch, capsys):
     import neotaste_scraper.neotaste_scraper as ns
     monkeypatch.setattr(ns, 'NJS_AVAILABLE', True)
 
-    result = fetch_deals_from_city("sample-city", filter_mode=None)
+    result = fetch_deals_from_city("sample-city", filter_mode=None, verbosity=ns.Verbosity.NORMAL)
 
     # Capture stderr logs
     captured = capsys.readouterr()
