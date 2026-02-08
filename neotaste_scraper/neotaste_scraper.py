@@ -175,11 +175,12 @@ def fetch_api(city_slug,
                 filtered_deals = filter_deals(restaurant.get('deals', []), filter_mode)
                 restaurant['deals'] = filtered_deals
                 results_by_slug[slug] = restaurant
-                added_api += 1
 
             # remove empty entries if filter_mode filters out all deals
             if slug in results_by_slug and not results_by_slug[slug]['deals']:
                 del results_by_slug[slug]
+            else:
+                added_api += 1
 
         sources_summary.append(f"API: {added_api}")
         if verbosity.value > Verbosity.SILENT.value:
