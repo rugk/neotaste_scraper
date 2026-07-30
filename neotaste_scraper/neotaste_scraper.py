@@ -195,6 +195,52 @@ def fetch_api(city_slug,
     return results_by_slug, sources_summary
 
 
+def _build_city_entry(item: Any) -> Optional[Dict[str, str]]:
+    """Create a city dict from a parsed API payload item."""
+    if not isinstance(item, dict):
+        return None
+    slug = item.get("slug")
+    name = item.get("name")
+    status = item.get("status")
+    if not slug or not name or status != "ACTIVE":
+        return None
+    return {"slug": slug, "name": name}
+
+
+def _parse_city_payload(payload: Any) -> List[Dict[str, str]]:
+    """Extract active cities from the API response payload."""
+    if not isinstance(payload, dict):
+        return []
+    items = payload.get("data") or []
+    cities = []
+    for item in items:
+        city_entry = _build_city_entry(item)
+        if city_entry is not None:
+            cities.append(city_entry)
+    return cities
+
+
+def _parse_city_html(html: str) -> List[Dict[str, str]]:
+    """Extract city links from the fallback HTML page."""
+    soup = BeautifulSoup(html, "html.parser")
+    city_links = soup.select('[data-sentry-component="CitiesList"] a')
+    if not city_links:
+        city_links = soup.select('a[href*="/restaurants/"]')
+
+    cities = []
+    for link in city_links:
+        city_name = link.select_one(".font-semibold") or link.find("span")
+        href = link.get("href") or ""
+        if not city_name or not href:
+            continue
+        if href.count("/") >= 3:
+            cities.append({
+                "slug": href.split("/")[3],
+                "name": city_name.get_text(strip=True)
+            })
+    return cities
+
+
 def fetch_all_cities(lang: str = "de",
                     verbosity: Verbosity = Verbosity.SILENT) -> List[Dict[str, str]]:
     """Fetch the list of cities from NeoTaste.
@@ -206,27 +252,14 @@ def fetch_all_cities(lang: str = "de",
         print(f"[neotaste_scraper] Fetching city list from {api_url}", file=sys.stderr)
 
     payload = api_client.request_json(api_url, timeout=10, verbosity=verbosity.value)
-    if isinstance(payload, dict):
-        items = payload.get("data") or []
-        cities = []
-        for item in items:
-            if not isinstance(item, dict):
-                continue
-            slug = item.get("slug")
-            name = item.get("name")
-            status = item.get("status")
-            if not slug or not name:
-                continue
-            if status != "ACTIVE":
-                continue
-            cities.append({"slug": slug, "name": name})
-        if cities:
-            if verbosity.value > Verbosity.SILENT.value:
-                print(
-                    f"[neotaste_scraper] API city discovery found {len(cities)} cities",
-                    file=sys.stderr
-                )
-            return cities
+    cities = _parse_city_payload(payload)
+    if cities:
+        if verbosity.value > Verbosity.SILENT.value:
+            print(
+                f"[neotaste_scraper] API city discovery found {len(cities)} cities",
+                file=sys.stderr
+            )
+        return cities
 
     if verbosity.value > Verbosity.SILENT.value:
         print(
@@ -246,23 +279,7 @@ def fetch_all_cities(lang: str = "de",
         print(f"Error fetching {url}", file=sys.stderr)
         return []
 
-    soup = BeautifulSoup(html, "html.parser")
-    city_links = soup.select('[data-sentry-component="CitiesList"] a')
-    if not city_links:
-        city_links = soup.select('a[href*="/restaurants/"]')
-
-    cities = []
-    for link in city_links:
-        city_name = link.select_one(".font-semibold") or link.find("span")
-        href = link.get("href") or ""
-        if not city_name or not href:
-            continue
-        if href.count("/") >= 3:
-            cities.append({
-                "slug": href.split("/")[3],
-                "name": city_name.get_text(strip=True)
-            })
-
+    cities = _parse_city_html(html)
     if verbosity.value > Verbosity.SILENT.value:
         print(
             f"[neotaste_scraper] HTML city discovery found {len(cities)} cities",

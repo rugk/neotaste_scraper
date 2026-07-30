@@ -62,27 +62,40 @@ def _coerce_status_code(status_attr: Any) -> int:
     return 200
 
 
+def _build_request_kwargs(params: Dict[str, Any] | None = None,
+                           timeout: int = 10,
+                           request_headers: Dict[str, str] | None = None) -> Dict[str, Any]:
+    """Build the request kwargs for a requests.get call."""
+    request_kwargs = {"timeout": timeout}
+    if params is not None:
+        request_kwargs["params"] = params
+    if request_headers is not None:
+        request_kwargs["headers"] = request_headers
+    return request_kwargs
+
+
 def _request_with_retries(url: str,
-                          *,
-                          params: Dict[str, Any] | None = None,
-                          timeout: int = 10,
-                          verbosity: int = 0,
-                          headers: Dict[str, str] | None = None,
-                          retry_limit: int = 3,
-                          base_backoff: float = 1.0) -> requests.Response | None:
+                          **request_kwargs: Any) -> requests.Response | None:
     """Perform an HTTP GET with retries and browser-like headers."""
-    request_headers = headers or _build_api_headers()
+    timeout = int(request_kwargs.get("timeout", 10))
+    verbosity = int(request_kwargs.get("verbosity", 0))
+    params = request_kwargs.get("params")
+    headers = request_kwargs.get("headers")
+    retry_limit = int(request_kwargs.get("retry_limit", 3))
+    base_backoff = float(request_kwargs.get("base_backoff", 1.0))
+
+    request_headers = headers if headers is not None else _build_api_headers()
     attempts = 0
     while attempts < retry_limit:
         try:
-            request_kwargs = {"timeout": timeout}
-            if headers is not None or params is not None or not request_headers:
-                request_kwargs["headers"] = request_headers
-            elif request_headers:
-                request_kwargs["headers"] = request_headers
-            if params is not None:
-                request_kwargs["params"] = params
-            response = requests.get(url, **request_kwargs)
+            response = requests.get(
+                url,
+                **_build_request_kwargs(
+                    params=params,
+                    timeout=timeout,
+                    request_headers=request_headers
+                )
+            )
         except requests.RequestException as exc:
             print(f"[api_client] request error: {exc}", file=sys.stderr)
             if attempts >= retry_limit - 1:
@@ -94,9 +107,7 @@ def _request_with_retries(url: str,
             attempts += 1
             continue
 
-        status_attr = getattr(response, 'status_code', None)
-        status = _coerce_status_code(status_attr)
-
+        status = _coerce_status_code(getattr(response, 'status_code', None))
         if status == 403:
             print("[api_client] page response status:", status,
                   ", failed with user agent: ", request_headers["User-Agent"], file=sys.stderr)
@@ -121,29 +132,14 @@ def _request_with_retries(url: str,
     return None
 
 
-def request_json(url: str,
-                 *,
-                 params: Dict[str, Any] | None = None,
-                 timeout: int = 10,
-                 verbosity: int = 0,
-                 headers: Dict[str, str] | None = None,
-                 retry_limit: int = 3,
-                 base_backoff: float = 1.0) -> Any | None:
+def request_json(url: str, **request_kwargs: Any) -> Any | None:
     """Fetch and parse JSON from a URL with shared request handling."""
-    response = _request_with_retries(
-        url,
-        params=params,
-        timeout=timeout,
-        verbosity=verbosity,
-        headers=headers,
-        retry_limit=retry_limit,
-        base_backoff=base_backoff
-    )
+    response = _request_with_retries(url, **request_kwargs)
     if response is None:
         return None
 
-    status_attr = getattr(response, 'status_code', None)
-    status = _coerce_status_code(status_attr)
+    status = _coerce_status_code(getattr(response, 'status_code', None))
+    verbosity = int(request_kwargs.get("verbosity", 0))
 
     if status != 200:
         if verbosity:
@@ -166,29 +162,14 @@ def request_json(url: str,
         return None
 
 
-def request_text(url: str,
-                 *,
-                 params: Dict[str, Any] | None = None,
-                 timeout: int = 10,
-                 verbosity: int = 0,
-                 headers: Dict[str, str] | None = None,
-                 retry_limit: int = 3,
-                 base_backoff: float = 1.0) -> str | None:
+def request_text(url: str, **request_kwargs: Any) -> str | None:
     """Fetch text content from a URL with shared request handling."""
-    response = _request_with_retries(
-        url,
-        params=params,
-        timeout=timeout,
-        verbosity=verbosity,
-        headers=headers,
-        retry_limit=retry_limit,
-        base_backoff=base_backoff
-    )
+    response = _request_with_retries(url, **request_kwargs)
     if response is None:
         return None
 
-    status_attr = getattr(response, 'status_code', None)
-    status = _coerce_status_code(status_attr)
+    status = _coerce_status_code(getattr(response, 'status_code', None))
+    verbosity = int(request_kwargs.get("verbosity", 0))
 
     if status != 200:
         if verbosity:

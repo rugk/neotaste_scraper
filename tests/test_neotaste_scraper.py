@@ -141,7 +141,11 @@ def test_fetch_all_cities_uses_api_endpoint():
         cities = fetch_all_cities(lang="en")
 
     assert cities == [{"slug": "sample-city", "name": "Sample City"}]
-    mock_get.assert_called_once_with("https://api.neotaste.com/web/cities", timeout=10)
+    assert mock_get.call_count == 1
+    assert mock_get.call_args.args == ("https://api.neotaste.com/web/cities",)
+    assert mock_get.call_args.kwargs["timeout"] == 10
+    assert "User-Agent" in mock_get.call_args.kwargs["headers"]
+    assert mock_get.call_args.kwargs["headers"]["Referer"] == "https://neotaste.com/"
 
 
 def test_fetch_all_cities_logs_verbose_details(capsys):

@@ -73,17 +73,18 @@ def test_fetch_restaurants_classifs_event_deals():
     # Check deals presence
     assert any(event_deal["name"] in [d.text for d in r.get("deals", [])] for r in results)
     assert any(non_event_deal["name"] in [d.text for d in r.get("deals", [])] for r in results)
-    assert any(deal_with_unknown_state["name"] in [d.text for d in r.get("deals", [])] for r in results)
+    assert any(deal_with_unknown_state["name"] in [d.text for d in r.get("deals", [])]
+               for r in results)
     # event deal is marked as such
-    assert any(d.deal_type == "flash+event" for d in
-               [d for r in results for d in r.get("deals", [])
-                if d.text == event_deal["name"]])
-    assert all(d.deal_type is None for d in
-               [d for r in results for d in r.get("deals", [])
-                if d.text == non_event_deal["name"]])
-    assert all(d.deal_type is None for d in
-               [d for r in results for d in r.get("deals", [])
-                if d.text == deal_with_unknown_state["name"]])
+    event_results = [d for r in results for d in r.get("deals", [])
+                     if d.text == event_deal["name"]]
+    non_event_results = [d for r in results for d in r.get("deals", [])
+                          if d.text == non_event_deal["name"]]
+    unknown_results = [d for r in results for d in r.get("deals", [])
+                       if d.text == deal_with_unknown_state["name"]]
+    assert any(d.deal_type == "flash+event" for d in event_results)
+    assert all(d.deal_type is None for d in non_event_results)
+    assert all(d.deal_type is None for d in unknown_results)
 
 def test_fetch_restaurants_with_api_fixture():
     """Test with real API response fixture (api-response-page.json)."""
@@ -125,7 +126,9 @@ def test_fetch_restaurants_uses_web_api_endpoint():
         fetch_restaurants_from_api("berlin", lang="de")
 
     assert called, "requests.get should be called"
-    assert called[0][0] == "https://api.neotaste.com/web/restaurants/cities/berlin/restaurants"
+    assert called[0][0] == (
+        "https://api.neotaste.com/web/restaurants/cities/berlin/restaurants"
+    )
     assert called[0][1] == {"page": 1, "citySlug": "berlin", "includeLoyalty": "true"}
 
 
@@ -133,7 +136,16 @@ def test_fetch_restaurants_matches_lowercase_city_response():
     """Uppercase city slug input should still match lowercase API response citySlug."""
     page1 = {
         "data": [
-            {"slug": "members-friends", "name": "members & friends", "citySlug": "aachen", "deals": [{"name": "2for1 Main Item", "status": "available", "eventDeal": False}]}
+            {
+                "slug": "members-friends",
+                "name": "members & friends",
+                "citySlug": "aachen",
+                "deals": [{
+                    "name": "2for1 Main Item",
+                    "status": "available",
+                    "eventDeal": False
+                }]
+            }
         ],
         "meta": {"page": 1, "isLastPage": True}
     }
