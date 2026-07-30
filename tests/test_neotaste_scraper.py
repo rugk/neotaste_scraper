@@ -2,6 +2,7 @@
 Tests for CLI main Python file.
 """
 
+import json
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -13,7 +14,7 @@ from neotaste_scraper.neotaste_scraper import (
     fetch_deals_from_city,
     fetch_all_cities
 )
-from neotaste_scraper.data_output import print_deals
+from neotaste_scraper.data_output import print_deals, output_json, output_html
 
 
 def load_html(file_name):
@@ -179,3 +180,32 @@ def test_print_deals(mock_print):
     mock_print.assert_any_call("  Sample Restaurant")
     mock_print.assert_any_call("   - 🌟 €5 Off")
     mock_print.assert_any_call("   → http://link.com")
+
+
+def test_output_json_includes_generated_at(tmp_path):
+    """JSON export should preserve the city data and include a human-friendly generation timestamp."""
+    output_path = tmp_path / "output.json"
+    cities_data = {
+        "sample-city": [{"restaurant": "Sample Restaurant", "deals": ["🌟 €5 Off"], "link": "http://link.com"}]
+    }
+
+    output_json(cities_data, str(output_path), generated_at="2026-07-30T12:34:56+00:00")
+
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["generated_at"] == "2026-07-30T12:34:56+00:00"
+    assert payload["generated_at_display"] == "30 Jul 2026, 12:34:56 UTC"
+    assert payload["sample-city"][0]["restaurant"] == "Sample Restaurant"
+
+
+def test_output_html_includes_generated_at(tmp_path):
+    """HTML export should render the generation timestamp inside the page."""
+    output_path = tmp_path / "output.html"
+    cities_data = {
+        "sample-city": [{"restaurant": "Sample Restaurant", "deals": ["🌟 €5 Off"], "link": "http://link.com"}]
+    }
+
+    output_html(cities_data, lang="en", filename=str(output_path), generated_at="2026-07-30T12:34:56+00:00")
+
+    html_content = output_path.read_text(encoding="utf-8")
+    assert "Scraped at" in html_content
+    assert "30 Jul 2026, 12:34:56 UTC" in html_content
