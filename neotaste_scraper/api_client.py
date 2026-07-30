@@ -10,7 +10,7 @@ import random
 from typing import Any, Dict, List
 import requests
 
-from neotaste_scraper.constants import BASE_URL, Deal
+from neotaste_scraper.constants import BASE_URL, Deal, Verbosity
 
 API_BASE = "https://api.neotaste.com"
 
@@ -152,10 +152,11 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
             print("[api_client] page response status:", status,
                   ", worked with user agent: ", headers["User-Agent"], file=sys.stderr)
 
-            print(
-                f"[api_client] response body snippet: {body_snippet!r}",
-                file=sys.stderr
-            )
+            if verbosity > Verbosity.DEBUG.value:
+                print(
+                    f"[api_client] response body snippet: {body_snippet!r}",
+                    file=sys.stderr
+                )
 
         try:
             data = resp.json()
