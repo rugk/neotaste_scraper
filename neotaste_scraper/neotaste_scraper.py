@@ -8,7 +8,6 @@ different formats: text, JSON, or HTML.
 
 from typing import Any, Dict, List, Optional
 import sys
-import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
@@ -104,10 +103,9 @@ def fetch_deals_from_city(city_slug: str,
     """
 
     url = get_city_url(city_slug, lang)
-    try:
-        html = requests.get(url, timeout=10).text
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching {url}: {e}")
+    html = api_client.request_text(url, timeout=10, verbosity=verbosity.value)
+    if html is None:
+        print(f"Error fetching {url}", file=sys.stderr)
         return []
 
     # Try JSON API first — it provides full pagination and more results
@@ -201,45 +199,35 @@ def fetch_all_cities(lang: str = "de",
     api_url = f"{api_client.API_BASE}/web/cities"
     if verbosity.value > Verbosity.SILENT.value:
         print(f"[neotaste_scraper] Fetching city list from {api_url}", file=sys.stderr)
-    try:
-        api_response = requests.get(api_url, timeout=10)
-        if api_response.status_code == 200:
-            payload = api_response.json()
-            if isinstance(payload, dict):
-                items = payload.get("data") or []
-                cities = []
-                for item in items:
-                    if not isinstance(item, dict):
-                        continue
-                    slug = item.get("slug")
-                    name = item.get("name")
-                    status = item.get("status")
-                    if not slug or not name:
-                        continue
-                    if status != "ACTIVE":
-                        continue
-                    cities.append({"slug": slug, "name": name})
-                if cities:
-                    if verbosity.value > Verbosity.SILENT.value:
-                        print(
-                            f"[neotaste_scraper] API city discovery found {len(cities)} cities",
-                            file=sys.stderr
-                        )
-                    return cities
-    except requests.exceptions.RequestException:
-        if verbosity.value > Verbosity.SILENT.value:
-            print(
-                "[neotaste_scraper] API city discovery failed; falling back to HTML city discovery",
-                file=sys.stderr
-            )
-        pass
-    except ValueError:
-        if verbosity.value > Verbosity.SILENT.value:
-            print(
-                "[neotaste_scraper] API city discovery returned invalid payload; falling back to HTML city discovery",
-                file=sys.stderr
-            )
-        pass
+
+    payload = api_client.request_json(api_url, timeout=10, verbosity=verbosity.value)
+    if isinstance(payload, dict):
+        items = payload.get("data") or []
+        cities = []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            slug = item.get("slug")
+            name = item.get("name")
+            status = item.get("status")
+            if not slug or not name:
+                continue
+            if status != "ACTIVE":
+                continue
+            cities.append({"slug": slug, "name": name})
+        if cities:
+            if verbosity.value > Verbosity.SILENT.value:
+                print(
+                    f"[neotaste_scraper] API city discovery found {len(cities)} cities",
+                    file=sys.stderr
+                )
+            return cities
+
+    if verbosity.value > Verbosity.SILENT.value:
+        print(
+            "[neotaste_scraper] API city discovery failed; falling back to HTML city discovery",
+            file=sys.stderr
+        )
 
     # Fallback for older HTML-based discovery when the API is unavailable
     url = f"{BASE_URL}/{lang}/restaurants"
@@ -248,10 +236,9 @@ def fetch_all_cities(lang: str = "de",
             f"[neotaste_scraper] Falling back to HTML city discovery for {lang}",
             file=sys.stderr
         )
-    try:
-        html = requests.get(url, timeout=10).text
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching {url}: {e}", file=sys.stderr)
+    html = api_client.request_text(url, timeout=10, verbosity=verbosity.value)
+    if html is None:
+        print(f"Error fetching {url}", file=sys.stderr)
         return []
 
     soup = BeautifulSoup(html, "html.parser")
