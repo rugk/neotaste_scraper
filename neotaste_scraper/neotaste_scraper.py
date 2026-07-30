@@ -193,7 +193,37 @@ def fetch_api(city_slug,
 
 
 def fetch_all_cities(lang: str = "de") -> List[Dict[str, str]]:
-    """Scrape the main cities page to get a list of all cities."""
+    """Fetch the list of cities from NeoTaste.
+
+    Uses the public API first and falls back to the HTML city list when needed.
+    """
+    api_url = f"{api_client.API_BASE}/web/cities"
+    try:
+        api_response = requests.get(api_url, timeout=10)
+        if api_response.status_code == 200:
+            payload = api_response.json()
+            if isinstance(payload, dict):
+                items = payload.get("data") or []
+                cities = []
+                for item in items:
+                    if not isinstance(item, dict):
+                        continue
+                    slug = item.get("slug")
+                    name = item.get("name")
+                    status = item.get("status")
+                    if not slug or not name:
+                        continue
+                    if status != "ACTIVE":
+                        continue
+                    cities.append({"slug": slug, "name": name})
+                if cities:
+                    return cities
+    except requests.exceptions.RequestException:
+        pass
+    except ValueError:
+        pass
+
+    # Fallback for older HTML-based discovery when the API is unavailable
     url = f"{BASE_URL}/{lang}/restaurants"
     try:
         html = requests.get(url, timeout=10).text
@@ -203,17 +233,18 @@ def fetch_all_cities(lang: str = "de") -> List[Dict[str, str]]:
 
     soup = BeautifulSoup(html, "html.parser")
     city_links = soup.select('[data-sentry-component="CitiesList"] a')
+    if not city_links:
+        city_links = soup.select('a[href*="/restaurants/"]')
 
     cities = []
     for link in city_links:
-        # This class should contain the city name
-        city_name = link.select_one(".font-semibold")
-
-        # Ensure the city name is extracted correctly and strip out any extra spaces
-        if city_name:
+        city_name = link.select_one(".font-semibold") or link.find("span")
+        href = link.get("href") or ""
+        if not city_name or not href:
+            continue
+        if href.count("/") >= 3:
             cities.append({
-                "slug": link.get("href").split("/")[3],
+                "slug": href.split("/")[3],
                 "name": city_name.get_text(strip=True)
             })
-
     return cities

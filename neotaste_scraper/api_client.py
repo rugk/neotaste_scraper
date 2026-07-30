@@ -68,8 +68,8 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
         api_city_slug = normalized_city_slug.lower()
         url = f"{API_BASE}/web/restaurants/cities/{api_city_slug}/restaurants"
         params = {
-            # "page": page,
-            # "citySlug": normalized_city_slug,
+            "page": page,
+            "citySlug": normalized_city_slug,
             "includeLoyalty": "true"
         }
 
@@ -199,7 +199,7 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
                 found[slug] = {
                     "restaurant": name,
                     "deals": deals,
-                    "link": f"{BASE_URL}/{lang}/restaurants/{slug}"
+                    "link": f"{BASE_URL}/{lang}/restaurants/{api_city_slug}/{slug}"
                 }
 
         # Determine if we should continue paging

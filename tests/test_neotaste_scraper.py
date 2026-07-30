@@ -87,18 +87,60 @@ def test_fetch_deals_from_city(mock_get, html_file):
     'tests/html_snippets/restaurant-overview-all-cities.html'
 ])
 @patch('requests.get')
-def test_fetch_all_cities(mock_get, html_file):
-    """Test fetch_all_cities function with mocking requests"""
-    # Mock the response from requests.get
-    mock_response = MagicMock()
+def test_fetch_all_cities_falls_back_to_html(mock_get, html_file):
+    """Test fetch_all_cities uses HTML fallback when the API is unavailable."""
+    # Simulate API failure then HTML success
     html_content = load_html(html_file)
-    mock_response.text = html_content
-    mock_get.return_value = mock_response
+    api_response = MagicMock(status_code=500)
+    api_response.text = ""
+    api_response.json.side_effect = ValueError("Invalid JSON")
+
+    html_response = MagicMock(status_code=200)
+    html_response.text = html_content
+    html_response.json.side_effect = ValueError("Should not be used")
+
+    mock_get.side_effect = [api_response, html_response]
 
     cities = fetch_all_cities(lang="en")
     assert len(cities) >= 1
     assert cities[0]['name'] == "Sample City"
     assert cities[0]['slug'] == "sample-city"
+
+
+def test_fetch_all_cities_falls_back_to_new_html_structure():
+    """Test fetch_all_cities fallback parsing for the newer HTML city list structure."""
+    html_content = load_html('tests/html_snippets/restaurant-overview-all-cities-new-fallback.html')
+    api_response = MagicMock(status_code=500)
+    api_response.text = ""
+    api_response.json.side_effect = ValueError("Invalid JSON")
+
+    html_response = MagicMock(status_code=200)
+    html_response.text = html_content
+    html_response.json.side_effect = ValueError("Should not be used")
+
+    with patch('requests.get', side_effect=[api_response, html_response]):
+        cities = fetch_all_cities(lang="de")
+
+    assert cities == [
+        {"slug": "aachen", "name": "Aachen"},
+        {"slug": "wuerzburg", "name": "Würzburg"}
+    ]
+
+
+def test_fetch_all_cities_uses_api_endpoint():
+    """Test fetch_all_cities discovers cities from the /web/cities API."""
+    api_response = MagicMock(status_code=200)
+    api_response.json.return_value = {
+        "data": [
+            {"slug": "sample-city", "name": "Sample City", "status": "ACTIVE"}
+        ]
+    }
+
+    with patch('requests.get', return_value=api_response) as mock_get:
+        cities = fetch_all_cities(lang="en")
+
+    assert cities == [{"slug": "sample-city", "name": "Sample City"}]
+    mock_get.assert_called_once_with("https://api.neotaste.com/web/cities", timeout=10)
 
 
 @patch('builtins.print')
