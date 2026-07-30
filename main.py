@@ -93,7 +93,7 @@ def main() -> None:
     elif args.all:
         # Fetch and print deals for all cities
         print("Fetching deals for all cities...")
-        cities = fetch_all_cities(args.lang)
+        cities = fetch_all_cities(args.lang, verbosity=verbosity)
         for city in cities:
             print(f"Fetching deals for city: {city['slug']}...")
             city_deals = fetch_deals_from_city(

@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 from bs4 import BeautifulSoup
 
+from neotaste_scraper.constants import Verbosity
 from neotaste_scraper.neotaste_scraper import (
     extract_deals_from_card,
     fetch_deals_from_city,
@@ -141,6 +142,24 @@ def test_fetch_all_cities_uses_api_endpoint():
 
     assert cities == [{"slug": "sample-city", "name": "Sample City"}]
     mock_get.assert_called_once_with("https://api.neotaste.com/web/cities", timeout=10)
+
+
+def test_fetch_all_cities_logs_verbose_details(capsys):
+    """Test fetch_all_cities emits verbose progress details when enabled."""
+    api_response = MagicMock(status_code=500)
+    api_response.text = ""
+    api_response.json.side_effect = ValueError("Invalid JSON")
+
+    html_response = MagicMock(status_code=200)
+    html_response.text = "<html><body><a href='/en/restaurants/sample-city'><span>Sample City</span></a></body></html>"
+    html_response.json.side_effect = ValueError("Should not be used")
+
+    with patch('requests.get', side_effect=[api_response, html_response]):
+        fetch_all_cities(lang="en", verbosity=Verbosity.NORMAL)
+
+    captured = capsys.readouterr()
+    assert "Falling back to HTML city discovery" in captured.err
+    assert "HTML city discovery found" in captured.err
 
 
 @patch('builtins.print')

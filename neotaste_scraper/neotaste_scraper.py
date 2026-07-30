@@ -192,12 +192,15 @@ def fetch_api(city_slug,
     return results_by_slug, sources_summary
 
 
-def fetch_all_cities(lang: str = "de") -> List[Dict[str, str]]:
+def fetch_all_cities(lang: str = "de",
+                    verbosity: Verbosity = Verbosity.SILENT) -> List[Dict[str, str]]:
     """Fetch the list of cities from NeoTaste.
 
     Uses the public API first and falls back to the HTML city list when needed.
     """
     api_url = f"{api_client.API_BASE}/web/cities"
+    if verbosity.value > Verbosity.SILENT.value:
+        print(f"[neotaste_scraper] Fetching city list from {api_url}", file=sys.stderr)
     try:
         api_response = requests.get(api_url, timeout=10)
         if api_response.status_code == 200:
@@ -217,18 +220,38 @@ def fetch_all_cities(lang: str = "de") -> List[Dict[str, str]]:
                         continue
                     cities.append({"slug": slug, "name": name})
                 if cities:
+                    if verbosity.value > Verbosity.SILENT.value:
+                        print(
+                            f"[neotaste_scraper] API city discovery found {len(cities)} cities",
+                            file=sys.stderr
+                        )
                     return cities
     except requests.exceptions.RequestException:
+        if verbosity.value > Verbosity.SILENT.value:
+            print(
+                "[neotaste_scraper] API city discovery failed; falling back to HTML city discovery",
+                file=sys.stderr
+            )
         pass
     except ValueError:
+        if verbosity.value > Verbosity.SILENT.value:
+            print(
+                "[neotaste_scraper] API city discovery returned invalid payload; falling back to HTML city discovery",
+                file=sys.stderr
+            )
         pass
 
     # Fallback for older HTML-based discovery when the API is unavailable
     url = f"{BASE_URL}/{lang}/restaurants"
+    if verbosity.value > Verbosity.SILENT.value:
+        print(
+            f"[neotaste_scraper] Falling back to HTML city discovery for {lang}",
+            file=sys.stderr
+        )
     try:
         html = requests.get(url, timeout=10).text
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching {url}: {e}")
+        print(f"Error fetching {url}: {e}", file=sys.stderr)
         return []
 
     soup = BeautifulSoup(html, "html.parser")
@@ -247,4 +270,10 @@ def fetch_all_cities(lang: str = "de") -> List[Dict[str, str]]:
                 "slug": href.split("/")[3],
                 "name": city_name.get_text(strip=True)
             })
+
+    if verbosity.value > Verbosity.SILENT.value:
+        print(
+            f"[neotaste_scraper] HTML city discovery found {len(cities)} cities",
+            file=sys.stderr
+        )
     return cities
