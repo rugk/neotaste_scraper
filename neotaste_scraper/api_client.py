@@ -1,17 +1,14 @@
-"""Simple API client to fetch restaurants from NeoTaste JSON API with pagination.
+"""Simple API client to fetch any data from NeoTaste JSON API with pagination.
 
 This module intentionally keeps dependencies minimal to avoid import cycles
 with the main scraper module.
 """
 from json import JSONDecodeError
+import sys
 import time
 import random
-from typing import Any, Dict, List
+from typing import Any, Dict
 import requests
-
-from neotaste_scraper.constants import BASE_URL, Deal
-
-API_BASE = "https://api.neotaste.com"
 
 # Rotating list of real browser User-Agents to avoid 403 blocks
 # (App User-Agents were tested but consistently return 403)
@@ -32,146 +29,151 @@ USER_AGENTS = [
 ]
 
 
-# pragma pylint: disable=too-many-nested-blocks, too-many-branches, too-many-locals, too-many-statements
-def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int = 0) -> List[Dict[str, Any]]:
-    """Fetch restaurants for a city using the NeoTaste JSON API with pagination.
+def _get_random_user_agent() -> str:
+    """Return a random browser or app User-Agent."""
+    return random.choice(USER_AGENTS)
 
-    The function will iterate pages until the API signals the last page
-    or until a reasonable safety limit is reached. It returns structured
-    restaurant dicts only when the restaurant has at least one available deal.
-    """
-    page = 1
-    found: Dict[str, Dict[str, Any]] = {}
-    max_pages = 200
 
-    def _get_random_user_agent() -> str:
-        """Return a random browser or app User-Agent."""
-        return random.choice(USER_AGENTS)
+def _build_api_headers() -> Dict[str, str]:
+    """Return browser-like headers for the NeoTaste API request."""
+    return {
+        "User-Agent": _get_random_user_agent(),
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Referer": "https://neotaste.com/",
+        "Origin": "https://neotaste.com",
+        "Cache-Control": "no-cache"
+    }
 
-    retry_limit = 3
-    base_backoff = 1.0
 
-    while page <= max_pages:
-        url = f"{API_BASE}/cities/{city_slug}/restaurants?citySlug={city_slug}&includeLoyalty=true&page={page}"
-
-        if verbosity:
-            print(f"[api_client] requesting page {page}: {url}")
-
-        # Per-page retries for rate-limited responses (403)
-        attempts = 0
-        resp = None
-        while attempts < retry_limit:
-            try:
-                headers = {"User-Agent": _get_random_user_agent()}
-                resp = requests.get(url, timeout=10, headers=headers)
-            except requests.RequestException as e:
-                print(f"[api_client] request error: {e}")
-                resp = None
-
-            # If no response object, break retries
-            if resp is None:
-                attempts += 1
-                time.sleep(base_backoff * (2 ** attempts))
-                continue
-
-            status_attr = getattr(resp, 'status_code', None)
-            try:
-                status = int(status_attr) if status_attr is not None else 200
-            except TypeError:
-                status = 200
-
-            if status == 403:
-                print("[api_client] page response status:", status,
-                      ", failed with user agent: ", headers["User-Agent"])
-
-                # Respect Retry-After header when present
-                ra = resp.headers.get(
-                    'Retry-After') if hasattr(resp, 'headers') else None
-                if ra:
-                    try:
-                        wait = int(ra)
-                    except TypeError:
-                        # Non-numeric Retry-After; fallback to exponential backoff
-                        wait = int(base_backoff * (2 ** attempts))
-                else:
-                    # exponential backoff with jitter
-                    wait = base_backoff * \
-                        (2 ** attempts) + random.random() * 0.5
-                if verbosity:
-                    print(f"[api_client] 403 received, backing off {wait:.1f}s" +
-                          f"(attempt {attempts+1})")
-                time.sleep(wait)
-                attempts += 1
-                continue
-
-            # For other status codes, break and handle below
-            break
-
-        # If we exhausted retries without a valid response, stop paging
-        if resp is None:
-            break
-
-        # Recompute status
-        status_attr = getattr(resp, 'status_code', None)
-        status = int(status_attr) if status_attr is not None else 200
-
-        if status != 200:
-            break
-
-        if verbosity:
-            print("[api_client] page response status:", status,
-                  ", worked with user agent: ", headers["User-Agent"])
-
+def _coerce_status_code(status_attr: Any) -> int:
+    """Normalize a response status code, defaulting to 200 for mocked objects."""
+    if status_attr is None:
+        return 200
+    if isinstance(status_attr, bool):
+        return 200
+    if isinstance(status_attr, int):
+        return status_attr
+    if isinstance(status_attr, str):
         try:
-            data = resp.json()
-        except JSONDecodeError:
-            break
+            return int(status_attr)
+        except ValueError:
+            return 200
+    return 200
 
-        # If the JSON doesn't parse to a dict (e.g. test mocks), stop
-        if not isinstance(data, dict):
-            break
 
-        items = data.get("data") or []
-        meta = data.get("meta") or {}
+def _build_request_kwargs(params: Dict[str, Any] | None = None,
+                           timeout: int = 10,
+                           request_headers: Dict[str, str] | None = None) -> Dict[str, Any]:
+    """Build the request kwargs for a requests.get call."""
+    request_kwargs = {"timeout": timeout}
+    if params is not None:
+        request_kwargs["params"] = params
+    if request_headers is not None:
+        request_kwargs["headers"] = request_headers
+    return request_kwargs
 
-        for obj in items:
-            if not isinstance(obj, dict):
-                continue
-            if obj.get("citySlug") != city_slug:
-                continue
-            slug = obj.get("slug")
-            name = obj.get("name")
-            if not slug or not name:
-                continue
 
-            # Extract available deals
-            deals = []
-            for d in obj.get("deals", []) or []:
-                if isinstance(d, dict) and d.get("status") == "available":
-                    deal_name = d.get("name") or ""
-                    deal_name = deal_name.strip()
-                    if deal_name:
-                        deals.append(Deal(
-                            text=deal_name,
-                            component="api",
-                            deal_type="flash+event" if d.get("eventDeal", False) else None
-                        ))
+def _request_with_retries(url: str,
+                          **request_kwargs: Any) -> requests.Response | None:
+    """Perform an HTTP GET with retries and browser-like headers."""
+    timeout = int(request_kwargs.get("timeout", 10))
+    verbosity = int(request_kwargs.get("verbosity", 0))
+    params = request_kwargs.get("params")
+    headers = request_kwargs.get("headers")
+    retry_limit = int(request_kwargs.get("retry_limit", 3))
+    base_backoff = float(request_kwargs.get("base_backoff", 1.0))
 
-            if deals:
-                found[slug] = {
-                    "restaurant": name,
-                    "deals": deals,
-                    "link": f"{BASE_URL}/{lang}/restaurants/{slug}"
-                }
+    request_headers = headers if headers is not None else _build_api_headers()
+    attempts = 0
+    while attempts < retry_limit:
+        try:
+            response = requests.get(
+                url,
+                **_build_request_kwargs(
+                    params=params,
+                    timeout=timeout,
+                    request_headers=request_headers
+                )
+            )
+        except requests.RequestException as exc:
+            print(f"[api_client] request error: {exc}", file=sys.stderr)
+            if attempts >= retry_limit - 1:
+                return None
+            wait = base_backoff * (2 ** attempts) + random.random() * 0.5
+            if verbosity:
+                print(f"[api_client] retrying request in {wait:.1f}s", file=sys.stderr)
+            time.sleep(wait)
+            attempts += 1
+            continue
 
-        # Determine if we should continue paging
-        if isinstance(meta, dict) and meta.get("isLastPage"):
-            break
+        status = _coerce_status_code(getattr(response, 'status_code', None))
+        if status == 403:
+            print("[api_client] page response status:", status,
+                  ", failed with user agent: ", request_headers["User-Agent"], file=sys.stderr)
 
-        if not items:
-            break
+            retry_after = response.headers.get('Retry-After') if hasattr(response, 'headers') else None
+            if retry_after:
+                try:
+                    wait = int(retry_after)
+                except TypeError:
+                    wait = int(base_backoff * (2 ** attempts))
+            else:
+                wait = base_backoff * (2 ** attempts) + random.random() * 0.5
+            if verbosity:
+                print(f"[api_client] 403 received, backing off {wait:.1f}s"
+                      f"(attempt {attempts+1})")
+            time.sleep(wait)
+            attempts += 1
+            continue
 
-        page += 1
+        return response
 
-    return list(found.values())
-#pragma pylint: enable=too-many-nested-blocks, too-many-branches, too-many-locals, too-many-statements
+    return None
+
+
+def request_json(url: str, **request_kwargs: Any) -> Any | None:
+    """Fetch and parse JSON from a URL with shared request handling."""
+    response = _request_with_retries(url, **request_kwargs)
+    if response is None:
+        return None
+
+    status = _coerce_status_code(getattr(response, 'status_code', None))
+    verbosity = int(request_kwargs.get("verbosity", 0))
+
+    if status != 200:
+        if verbosity:
+            body_snippet = getattr(response, 'text', '')[:200].replace("\n", " ")
+            print(
+                f"[api_client] non-200 response for {url}: {status}",
+                file=sys.stderr
+            )
+            print(
+                f"[api_client] response body snippet: {body_snippet!r}",
+                file=sys.stderr
+            )
+        return None
+
+    try:
+        return response.json()
+    except (JSONDecodeError, ValueError) as exc:
+        if verbosity:
+            print(f"[api_client] invalid JSON response from {url}: {exc}", file=sys.stderr)
+        return None
+
+
+def request_text(url: str, **request_kwargs: Any) -> str | None:
+    """Fetch text content from a URL with shared request handling."""
+    response = _request_with_retries(url, **request_kwargs)
+    if response is None:
+        return None
+
+    status = _coerce_status_code(getattr(response, 'status_code', None))
+    verbosity = int(request_kwargs.get("verbosity", 0))
+
+    if status != 200:
+        if verbosity:
+            print(f"[api_client] non-200 response for {url}: {status}", file=sys.stderr)
+        return None
+
+    return getattr(response, 'text', '')

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 
+API_BASE = "https://api.neotaste.com"
 BASE_URL = "https://neotaste.com"
 
 

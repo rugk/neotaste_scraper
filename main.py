@@ -84,17 +84,16 @@ def main() -> None:
     else:
         filter_mode = None
 
+    verbosity = [Verbosity.SILENT, Verbosity.NORMAL, Verbosity.DEBUG][min(args.verbose, 2)]
     if args.city:
         # Fetch and print deals for a specific city
         print(f"Fetching deals for city: {args.city}...")
-        verbosity = [Verbosity.SILENT, Verbosity.NORMAL, Verbosity.DEBUG][min(args.verbose, 2)]
         deals_in_restaurants = fetch_deals_from_city(args.city, filter_mode, args.lang, verbosity=verbosity)
         cities_data[args.city] = deals_in_restaurants
     elif args.all:
         # Fetch and print deals for all cities
         print("Fetching deals for all cities...")
-        verbosity = [Verbosity.SILENT, Verbosity.NORMAL, Verbosity.DEBUG][min(args.verbose, 2)]
-        cities = fetch_all_cities(args.lang)
+        cities = fetch_all_cities(args.lang, verbosity=verbosity)
         for city in cities:
             print(f"Fetching deals for city: {city['slug']}...")
             city_deals = fetch_deals_from_city(
@@ -120,6 +119,7 @@ def main() -> None:
             "filter_mode": filter_mode,
             "include_footer_navigation": args.html_include_footer_navigation
         })
+
 
 if __name__ == "__main__":
     main()

@@ -4,17 +4,20 @@ NeoTaste's city-specific restaurant pages.
 You can filter and retrieve restaurant deals, including
 ”event-deals“ (marked with 🌟), and export the data to
 different formats: text, JSON, or HTML.
+
+This is the main entry point for the command-line interface (CLI) of the NeoTaste scraper,
+but can also be used alone.
 """
 
 from typing import Any, Dict, List, Optional
 import sys
-import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from neotaste_scraper.constants import BASE_URL, Deal, Verbosity
+from neotaste_scraper.constants import API_BASE, BASE_URL, Deal, Verbosity
 from neotaste_scraper.helper import filter_deals, get_city_url, get_slug_from_link
 from . import api_client
+from . import restaurant_scraper
 
 def extract_deals_from_card(card: Tag,
                             filter_mode: Optional[str] = None
@@ -104,10 +107,9 @@ def fetch_deals_from_city(city_slug: str,
     """
 
     url = get_city_url(city_slug, lang)
-    try:
-        html = requests.get(url, timeout=10).text
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching {url}: {e}")
+    html = api_client.request_text(url, timeout=10, verbosity=verbosity.value)
+    if html is None:
+        print(f"Error fetching {url}", file=sys.stderr)
         return []
 
     # Try JSON API first — it provides full pagination and more results
@@ -125,6 +127,7 @@ def fetch_deals_from_city(city_slug: str,
           f"{''.join(sources_summary) if sources_summary else 'no sources'} "
           f"for {city_slug}", file=sys.stderr)
     return results
+
 
 def parse_html(filter_mode, verbosity, results_by_slug, sources_summary, soup):
     """Parse the HTML for restaurant cards and extract deals, applying filters."""
@@ -152,7 +155,7 @@ def fetch_api(city_slug,
               filter_mode: Optional[str] = None):
     """Fetch restaurant data from the NeoTaste JSON API with pagination."""
     try:
-        api_results = api_client.fetch_restaurants_from_api(
+        api_results = restaurant_scraper.fetch_restaurants_from_api(
             city_slug,
             lang=lang,
             verbosity=verbosity.value)
@@ -192,28 +195,94 @@ def fetch_api(city_slug,
     return results_by_slug, sources_summary
 
 
-def fetch_all_cities(lang: str = "de") -> List[Dict[str, str]]:
-    """Scrape the main cities page to get a list of all cities."""
-    url = f"{BASE_URL}/{lang}/restaurants"
-    try:
-        html = requests.get(url, timeout=10).text
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching {url}: {e}")
-        return []
+def _build_city_entry(item: Any) -> Optional[Dict[str, str]]:
+    """Create a city dict from a parsed API payload item."""
+    if not isinstance(item, dict):
+        return None
+    slug = item.get("slug")
+    name = item.get("name")
+    status = item.get("status")
+    if not slug or not name or status != "ACTIVE":
+        return None
+    return {"slug": slug, "name": name}
 
+
+def _parse_city_payload(payload: Any) -> List[Dict[str, str]]:
+    """Extract active cities from the API response payload."""
+    if not isinstance(payload, dict):
+        return []
+    items = payload.get("data") or []
+    cities = []
+    for item in items:
+        city_entry = _build_city_entry(item)
+        if city_entry is not None:
+            cities.append(city_entry)
+    return cities
+
+
+def _parse_city_html(html: str) -> List[Dict[str, str]]:
+    """Extract city links from the fallback HTML page."""
     soup = BeautifulSoup(html, "html.parser")
     city_links = soup.select('[data-sentry-component="CitiesList"] a')
+    if not city_links:
+        city_links = soup.select('a[href*="/restaurants/"]')
 
     cities = []
     for link in city_links:
-        # This class should contain the city name
-        city_name = link.select_one(".font-semibold")
-
-        # Ensure the city name is extracted correctly and strip out any extra spaces
-        if city_name:
+        city_name = link.select_one(".font-semibold") or link.find("span")
+        href = link.get("href") or ""
+        if not city_name or not href:
+            continue
+        if href.count("/") >= 3:
             cities.append({
-                "slug": link.get("href").split("/")[3],
+                "slug": href.split("/")[3],
                 "name": city_name.get_text(strip=True)
             })
+    return cities
 
+
+def fetch_all_cities(lang: str = "de",
+                    verbosity: Verbosity = Verbosity.SILENT) -> List[Dict[str, str]]:
+    """Fetch the list of cities from NeoTaste.
+
+    Uses the public API first and falls back to the HTML city list when needed.
+    """
+    api_url = f"{API_BASE}/web/cities"
+    if verbosity.value > Verbosity.SILENT.value:
+        print(f"[neotaste_scraper] Fetching city list from {api_url}", file=sys.stderr)
+
+    payload = api_client.request_json(api_url, timeout=10, verbosity=verbosity.value)
+    cities = _parse_city_payload(payload)
+    if cities:
+        if verbosity.value > Verbosity.SILENT.value:
+            print(
+                f"[neotaste_scraper] API city discovery found {len(cities)} cities",
+                file=sys.stderr
+            )
+        return cities
+
+    if verbosity.value > Verbosity.SILENT.value:
+        print(
+            "[neotaste_scraper] API city discovery failed; falling back to HTML city discovery",
+            file=sys.stderr
+        )
+
+    # Fallback for older HTML-based discovery when the API is unavailable
+    url = f"{BASE_URL}/{lang}/restaurants"
+    if verbosity.value > Verbosity.SILENT.value:
+        print(
+            f"[neotaste_scraper] Falling back to HTML city discovery for {lang}",
+            file=sys.stderr
+        )
+    html = api_client.request_text(url, timeout=10, verbosity=verbosity.value)
+    if html is None:
+        print(f"Error fetching {url}", file=sys.stderr)
+        return []
+
+    cities = _parse_city_html(html)
+    if verbosity.value > Verbosity.SILENT.value:
+        print(
+            f"[neotaste_scraper] HTML city discovery found {len(cities)} cities",
+            file=sys.stderr
+        )
     return cities
