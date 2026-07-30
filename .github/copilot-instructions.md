@@ -39,6 +39,7 @@
 - For local export checks, use the commands from [README.md](../README.md) and the GitHub workflow files.
 - Keep changes backward-compatible where practical, especially for CLI flags and the JSON/HTML output contract.
 - Update [README.md](../README.md) and the workflow files when CLI behavior or export paths change.
+- Run `flake8` and `pylint` to check for style and linting issues before committing.
 
 ## Do / Don’t
 - Do: add or update HTML fixtures in [tests/html_snippets/](../tests/html_snippets) when parsing rules change.
