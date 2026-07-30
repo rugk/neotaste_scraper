@@ -104,13 +104,15 @@ def main() -> None:
         print(get_localized_strings(args.lang)['no_deals_found'])
         return
 
+    generated_at = None
+
     # Print deals in text format (default)
     print_deals(cities_data, args.lang)
 
     # Output in JSON format if requested
     if args.json:
         print(f"Outputting deals to {args.json}...")
-        output_json(cities_data, args.json)
+        output_json(cities_data, args.json, generated_at=generated_at)
 
     # Output in HTML format if requested
     if args.html:
@@ -118,7 +120,7 @@ def main() -> None:
         output_html(cities_data, args.lang, args.html, {
             "filter_mode": filter_mode,
             "include_footer_navigation": args.html_include_footer_navigation
-        })
+        }, generated_at=generated_at)
 
 
 if __name__ == "__main__":
