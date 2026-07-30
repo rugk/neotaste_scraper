@@ -76,9 +76,9 @@ def _request_with_retries(url: str,
     while attempts < retry_limit:
         try:
             request_kwargs = {"timeout": timeout}
-            if headers is not None:
+            if headers is not None or params is not None or not request_headers:
                 request_kwargs["headers"] = request_headers
-            elif params is not None:
+            elif request_headers:
                 request_kwargs["headers"] = request_headers
             if params is not None:
                 request_kwargs["params"] = params

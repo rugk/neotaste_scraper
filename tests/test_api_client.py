@@ -22,4 +22,23 @@ def test_request_json_uses_browser_headers_and_params():
     assert calls[0][0] == "https://api.neotaste.com/web/cities"
     assert calls[0][1] == 10
     assert calls[0][3] == {"page": 1}
+    assert calls[0][2] is not None
+    assert "User-Agent" in calls[0][2]
+
+
+def test_request_json_sends_default_headers_without_params():
+    """Requests (like for the city discovery endpoint) should still receive browser-like headers even with no params."""
+    calls = []
+
+    def fake_get(url, timeout=10, headers=None, params=None):
+        calls.append((url, timeout, headers, params))
+        return DummyResp({"data": [{"slug": "sample-city"}]})
+
+    with patch("neotaste_scraper.api_client.requests.get", side_effect=fake_get):
+        payload = request_json("https://api.neotaste.com/web/cities", verbosity=1)
+
+    assert payload == {"data": [{"slug": "sample-city"}]}
+    assert len(calls) == 1
+    assert calls[0][3] is None
+    assert calls[0][2] is not None
     assert "User-Agent" in calls[0][2]
