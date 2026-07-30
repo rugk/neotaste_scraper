@@ -47,7 +47,7 @@ def _format_generated_at(value: str) -> str:
     return parsed.astimezone(timezone.utc).strftime("%d %b %Y, %H:%M:%S UTC")
 
 
-def output_json(cities_data, filename: str = "output.json", generated_at: Optional[str] = None, lang: str = "de"):
+def output_json(cities_data, filename: str = "output.json", generated_at: Optional[str] = None):
     """Output deals in JSON format, including city information and a timestamp."""
     raw_generated_at = _resolve_generated_at(generated_at)
     payload = {

@@ -189,7 +189,7 @@ def test_output_json_includes_generated_at(tmp_path):
         "sample-city": [{"restaurant": "Sample Restaurant", "deals": ["🌟 €5 Off"], "link": "http://link.com"}]
     }
 
-    output_json(cities_data, str(output_path), generated_at="2026-07-30T12:34:56+00:00", lang="en")
+    output_json(cities_data, str(output_path), generated_at="2026-07-30T12:34:56+00:00")
 
     payload = json.loads(output_path.read_text(encoding="utf-8"))
     assert payload["generated_at"] == "2026-07-30T12:34:56+00:00"
