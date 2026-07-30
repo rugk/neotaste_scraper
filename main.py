@@ -120,5 +120,6 @@ def main() -> None:
             "include_footer_navigation": args.html_include_footer_navigation
         })
 
+
 if __name__ == "__main__":
     main()

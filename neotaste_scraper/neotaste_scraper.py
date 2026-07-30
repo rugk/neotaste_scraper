@@ -4,6 +4,9 @@ NeoTaste's city-specific restaurant pages.
 You can filter and retrieve restaurant deals, including
 ”event-deals“ (marked with 🌟), and export the data to
 different formats: text, JSON, or HTML.
+
+This is the main entry point for the command-line interface (CLI) of the NeoTaste scraper,
+but can also be used alone.
 """
 
 from typing import Any, Dict, List, Optional
@@ -11,9 +14,10 @@ import sys
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from neotaste_scraper.constants import BASE_URL, Deal, Verbosity
+from neotaste_scraper.constants import API_BASE, BASE_URL, Deal, Verbosity
 from neotaste_scraper.helper import filter_deals, get_city_url, get_slug_from_link
 from . import api_client
+from . import restaurant_scraper
 
 def extract_deals_from_card(card: Tag,
                             filter_mode: Optional[str] = None
@@ -124,6 +128,7 @@ def fetch_deals_from_city(city_slug: str,
           f"for {city_slug}", file=sys.stderr)
     return results
 
+
 def parse_html(filter_mode, verbosity, results_by_slug, sources_summary, soup):
     """Parse the HTML for restaurant cards and extract deals, applying filters."""
     cards = soup.select("a[href*='/restaurants/']")
@@ -150,7 +155,7 @@ def fetch_api(city_slug,
               filter_mode: Optional[str] = None):
     """Fetch restaurant data from the NeoTaste JSON API with pagination."""
     try:
-        api_results = api_client.fetch_restaurants_from_api(
+        api_results = restaurant_scraper.fetch_restaurants_from_api(
             city_slug,
             lang=lang,
             verbosity=verbosity.value)
@@ -196,7 +201,7 @@ def fetch_all_cities(lang: str = "de",
 
     Uses the public API first and falls back to the HTML city list when needed.
     """
-    api_url = f"{api_client.API_BASE}/web/cities"
+    api_url = f"{API_BASE}/web/cities"
     if verbosity.value > Verbosity.SILENT.value:
         print(f"[neotaste_scraper] Fetching city list from {api_url}", file=sys.stderr)
 
