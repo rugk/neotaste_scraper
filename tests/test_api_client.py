@@ -41,10 +41,10 @@ def test_fetch_restaurants_paginates_and_extracts_deals():
         "meta": {"page": 2, "isLastPage": True}
     }
 
-    def fake_get(url, timeout=10, headers=None):  # pylint: disable=unused-argument # (required by requests.get signature)
-        if "page=1" in url:
+    def fake_get(url, timeout=10, headers=None, params=None):  # pylint: disable=unused-argument # (required by requests.get signature)
+        if params and params.get("page") == 1:
             return DummyResp(page1)
-        if "page=2" in url:
+        if params and params.get("page") == 2:
             return DummyResp(page2)
         return DummyResp({"data": [], "meta": {"isLastPage": True}})
 
@@ -75,8 +75,8 @@ def test_fetch_restaurants_classifs_event_deals():
         "meta": {"page": 1, "isLastPage": True}
     }
 
-    def fake_get(url, timeout=10, headers=None):  # pylint: disable=unused-argument # (required by requests.get signature)
-        if "page=1" in url:
+    def fake_get(url, timeout=10, headers=None, params=None):  # pylint: disable=unused-argument # (required by requests.get signature)
+        if params and params.get("page") == 1:
             return DummyResp(page1)
         return DummyResp({"data": [], "meta": {"isLastPage": True}})
 
@@ -108,11 +108,10 @@ def test_fetch_restaurants_with_api_fixture():
     # Mock returns the same fixture for all pages, then empty (simulating end)
     call_count = [0]
 
-    def fake_get(url, timeout=10, headers=None):  # pylint: disable=unused-argument # (required by requests.get signature)
+    def fake_get(url, timeout=10, headers=None, params=None):  # pylint: disable=unused-argument # (required by requests.get signature)
         call_count[0] += 1
-        if "page=1" in url:
+        if params and params.get("page") == 1:
             return DummyResp(api_page)
-        # All other pages return empty (end of pagination)
         return DummyResp({"data": [], "meta": {"isLastPage": True}})
 
     with patch("neotaste_scraper.api_client.requests.get", side_effect=fake_get):
@@ -128,3 +127,55 @@ def test_fetch_restaurants_with_api_fixture():
     assert "KONG" in names
     assert "Round & Edgy - Mitte" in names
     assert "PETER PANE Burgergrill & Bar - Friedrichstr." in names
+
+
+def test_fetch_restaurants_uses_web_api_endpoint():
+    """Ensure the API client uses the updated web endpoint and query params."""
+    called = []
+
+    def fake_get(url, timeout=10, headers=None, params=None):  # pylint: disable=unused-argument
+        called.append((url, params))
+        return DummyResp({"data": [], "meta": {"isLastPage": True}})
+
+    with patch("neotaste_scraper.api_client.requests.get", side_effect=fake_get):
+        fetch_restaurants_from_api("berlin", lang="de")
+
+    assert called, "requests.get should be called"
+    assert called[0][0] == "https://api.neotaste.com/web/restaurants/cities/berlin/restaurants"
+    assert called[0][1] == {"page": 1, "citySlug": "berlin", "includeLoyalty": "true"}
+
+
+def test_fetch_restaurants_matches_lowercase_city_response():
+    """Uppercase city slug input should still match lowercase API response citySlug."""
+    page1 = {
+        "data": [
+            {"slug": "members-friends", "name": "members & friends", "citySlug": "aachen", "deals": [{"name": "2for1 Main Item", "status": "available", "eventDeal": False}]}
+        ],
+        "meta": {"page": 1, "isLastPage": True}
+    }
+
+    def fake_get(url, timeout=10, headers=None, params=None):  # pylint: disable=unused-argument
+        return DummyResp(page1)
+
+    with patch("neotaste_scraper.api_client.requests.get", side_effect=fake_get):
+        results = fetch_restaurants_from_api("Aachen", lang="de")
+
+    assert len(results) == 1
+    assert results[0]["restaurant"] == "members & friends"
+    assert results[0]["link"].endswith("/aachen/members-friends")
+
+
+def test_fetch_restaurants_uses_lowercase_api_slug():
+    """The API client should normalize the city slug in the URL path."""
+    called = []
+
+    def fake_get(url, timeout=10, headers=None, params=None):  # pylint: disable=unused-argument
+        called.append((url, params))
+        return DummyResp({"data": [], "meta": {"isLastPage": True}})
+
+    with patch("neotaste_scraper.api_client.requests.get", side_effect=fake_get):
+        fetch_restaurants_from_api("Aachen", lang="de")
+
+    assert called, "requests.get should be called"
+    assert called[0][0] == "https://api.neotaste.com/web/restaurants/cities/aachen/restaurants"
+    assert called[0][1] == {"page": 1, "citySlug": "Aachen", "includeLoyalty": "true"}

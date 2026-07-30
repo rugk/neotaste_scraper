@@ -4,6 +4,7 @@ This module intentionally keeps dependencies minimal to avoid import cycles
 with the main scraper module.
 """
 from json import JSONDecodeError
+import sys
 import time
 import random
 from typing import Any, Dict, List
@@ -48,27 +49,45 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
         """Return a random browser or app User-Agent."""
         return random.choice(USER_AGENTS)
 
+    def _build_api_headers() -> Dict[str, str]:
+        """Return browser-like headers for the NeoTaste API request."""
+        return {
+            "User-Agent": _get_random_user_agent(),
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Referer": "https://neotaste.com/",
+            "Origin": "https://neotaste.com",
+            "Cache-Control": "no-cache"
+        }
+
     retry_limit = 3
     base_backoff = 1.0
 
     while page <= max_pages:
-        url = f"{API_BASE}/cities/{city_slug}/restaurants?citySlug={city_slug}&includeLoyalty=true&page={page}"
+        normalized_city_slug = city_slug.strip()
+        api_city_slug = normalized_city_slug.lower()
+        url = f"{API_BASE}/web/restaurants/cities/{api_city_slug}/restaurants"
+        params = {
+            # "page": page,
+            # "citySlug": normalized_city_slug,
+            "includeLoyalty": "true"
+        }
 
         if verbosity:
-            print(f"[api_client] requesting page {page}: {url}")
+            print(f"[api_client] requesting page {page}: {url} params={params}", file=sys.stderr)
 
         # Per-page retries for rate-limited responses (403)
         attempts = 0
         resp = None
         while attempts < retry_limit:
             try:
-                headers = {"User-Agent": _get_random_user_agent()}
-                resp = requests.get(url, timeout=10, headers=headers)
+                headers = _build_api_headers()
+                resp = requests.get(url, timeout=10, headers=headers, params=params)
             except requests.RequestException as e:
-                print(f"[api_client] request error: {e}")
+                print(f"[api_client] request error: {e}", file=sys.stderr)
                 resp = None
 
-            # If no response object, break retries
+            # If no response object, retry
             if resp is None:
                 attempts += 1
                 time.sleep(base_backoff * (2 ** attempts))
@@ -82,7 +101,7 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
 
             if status == 403:
                 print("[api_client] page response status:", status,
-                      ", failed with user agent: ", headers["User-Agent"])
+                      ", failed with user agent: ", headers["User-Agent"], file=sys.stderr)
 
                 # Respect Retry-After header when present
                 ra = resp.headers.get(
@@ -115,12 +134,28 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
         status_attr = getattr(resp, 'status_code', None)
         status = int(status_attr) if status_attr is not None else 200
 
+        body_snippet = getattr(resp, 'text', '')[:200].replace("\n", " ")
+        
         if status != 200:
+            if verbosity:
+                print(
+                    f"[api_client] non-200 response for page {page}: {status} (url: {resp.url})",
+                    file=sys.stderr
+                )
+                print(
+                    f"[api_client] response body snippet: {body_snippet!r}",
+                    file=sys.stderr
+                )
             break
 
         if verbosity:
             print("[api_client] page response status:", status,
-                  ", worked with user agent: ", headers["User-Agent"])
+                  ", worked with user agent: ", headers["User-Agent"], file=sys.stderr)
+
+            print(
+                f"[api_client] response body snippet: {body_snippet!r}",
+                file=sys.stderr
+            )
 
         try:
             data = resp.json()
@@ -134,10 +169,13 @@ def fetch_restaurants_from_api(city_slug: str, lang: str = "de", verbosity: int 
         items = data.get("data") or []
         meta = data.get("meta") or {}
 
+        if verbosity:
+            print(f"[api_client] page {page}: items={len(items)} meta={meta}", file=sys.stderr)
+
         for obj in items:
             if not isinstance(obj, dict):
                 continue
-            if obj.get("citySlug") != city_slug:
+            if obj.get("citySlug", "").lower() != api_city_slug:
                 continue
             slug = obj.get("slug")
             name = obj.get("name")
