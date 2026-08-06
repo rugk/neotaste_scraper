@@ -62,7 +62,7 @@ jobs:
           python scripts/verify_json.py output/en/special-only.json 1 || echo "::warning::EN special-only.json is below minimum"
 
       - name: Upload site files
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: 'output'
         if: always()
